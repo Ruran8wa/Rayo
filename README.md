@@ -1,50 +1,101 @@
-# Welcome to your Expo app 👋
+# Rayo - Production Expo App 🚀
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A production-ready Expo application with a clean, scalable architecture.
 
-## Get started
+## 🏗️ Project Structure
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+Rayo/
+├── app/                    # Expo Router navigation
+│   ├── (tabs)/            # Tab-based routes
+│   ├── _layout.tsx        # Root layout with providers
+│   └── modal.tsx          # Modal screens
+├── src/                    # Source code (production structure)
+│   ├── components/        # Reusable UI components
+│   ├── screens/           # Screen components
+│   ├── services/          # API services & HTTP client
+│   ├── contexts/          # React Context (Auth included)
+│   ├── hooks/             # Custom React hooks
+│   ├── utils/             # Utilities (storage, validation, formatting)
+│   ├── types/             # TypeScript definitions
+│   ├── config/            # Environment & app configuration
+│   └── constants/         # Theme & constants
+└── assets/                # Static assets
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 🚀 Get Started
 
-## Learn more
+### 1. Install dependencies
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+npm install
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### 2. Configure environment
 
-## Join the community
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
 
-Join our community of developers creating universal apps.
+### 3. Start the app
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npm start
+```
+
+Choose your platform:
+
+- **a** - Open on Android
+- **i** - Open on iOS
+- **w** - Open in web browser
+
+## 📦 Features
+
+- ✅ **Production-ready architecture** with clear separation of concerns
+- ✅ **Type-safe API client** with error handling
+- ✅ **Authentication context** with storage persistence
+- ✅ **Utility functions** for validation, formatting, storage
+- ✅ **Path aliases** configured for clean imports
+- ✅ **Environment configuration** for dev/staging/prod
+
+## 🛠️ Available Scripts
+
+```bash
+npm start          # Start Expo dev server
+npm run android    # Run on Android
+npm run ios        # Run on iOS
+npm run web        # Run in web browser
+npm run lint       # Lint code
+```
+
+## 📖 Documentation
+
+For detailed information about the project structure and features, see:
+
+- [STRUCTURE.md](STRUCTURE.md) - Complete architecture documentation
+- [SETUP_COMPLETE.md](SETUP_COMPLETE.md) - Setup summary
+- [FIXES_APPLIED.md](FIXES_APPLIED.md) - Recent fixes and improvements
+
+## 🔧 Technology Stack
+
+- **Framework**: Expo SDK 54
+- **Language**: TypeScript
+- **Navigation**: Expo Router
+- **State Management**: React Context
+- **Storage**: AsyncStorage
+- **Styling**: React Native StyleSheet
+
+## 📚 Learn More
+
+- [Expo Documentation](https://docs.expo.dev/)
+- [React Native Documentation](https://reactnative.dev/)
+- [Expo Router](https://docs.expo.dev/router/introduction/)
+
+## 🤝 Contributing
+
+This is a production-ready starter template. Feel free to customize it for your needs.
+
+## 📄 License
+
+This project is open source and available under the MIT License.
