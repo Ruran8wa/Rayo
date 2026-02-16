@@ -1,0 +1,226 @@
+{
+  "site_id": "SCHOOL_ALU_001",
+  "site_type": "School",
+  "location": {
+    "province": "Kigali",
+    "district": "Gasabo",
+    "sector": "Bumbogo"
+  },
+  "structure": {
+    "site_layout": "multi_site",
+    "buildings": [
+      {
+        "building_id": "SCHOOL_ALU_LC",
+        "building_name": "Leadership Common",
+        "total_floors": 3,
+        "entrance": {
+          "step_free": true,
+          "ramps_present": false,
+          "stairs_present": false,
+          "main_entrance_accessible": true
+        },
+
+        "vertical_access": {
+          "elevator_present": true,
+          "elevator_accessible": true,
+          "stairs_present": true,
+          "handrails_present": true
+        },
+        "floors": [
+          {
+            "floor_level": 0,
+            "floor_name": "Ground Floor",
+            "services": ["Wellness_Center", "Sick_Bay", "Registrar"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          },
+          {
+            "floor_level": 1,
+            "floor_name": "First Floor",
+            "services": ["Library", "SPD_Hub", "Computer_Lab"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          },
+          {
+            "floor_level": 2,
+            "floor_name": "Second Floor",
+            "services": ["Reception", "Staff_Hive"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "building_id": "SCHOOL_ALU_SC",
+        "building_name": "Social Common",
+        "total_floors": 3,
+        "entrance": {
+          "step_free": true,
+          "ramps_present": false,
+          "stairs_present": false,
+          "main_entrance_accessible": true
+        },
+
+        "vertical_access": {
+          "elevator_present": true,
+          "elevator_accessible": true,
+          "stairs_present": true,
+          "handrails_present": true
+        },
+        "floors": [
+          {
+            "floor_level": 0,
+            "floor_name": "Ground Floor",
+            "services": ["Food_Court"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          },
+          {
+            "floor_level": 1,
+            "floor_name": "First Floor",
+            "services": ["Games_Hub", "Praying_Room"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          },
+          {
+            "floor_level": 2,
+            "floor_name": "Second Floor",
+            "services": ["Cafeteria"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "building_id": "SCHOOL_ALU_EC",
+        "building_name": "Enterprise Common",
+        "total_floors": 3,
+        "entrance": {
+          "step_free": true,
+          "ramps_present": false,
+          "stairs_present": false,
+          "main_entrance_accessible": true
+        },
+
+        "vertical_access": {
+          "elevator_present": true,
+          "elevator_accessible": true,
+          "stairs_present": true,
+          "handrails_present": true
+        },
+        "floors": [
+          {
+            "floor_level": 0,
+            "floor_name": "Ground Floor",
+            "services": ["Fab_Lab", "Meeting_Room"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          },
+          {
+            "floor_level": 1,
+            "floor_name": "First Floor",
+            "services": ["FabLab_Lab"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          },
+          {
+            "floor_level": 2,
+            "floor_name": "Second Floor",
+            "services": [],
+            "space_type": "academic_only",
+            "service_scope": "out_of_scope",
+            "note": "This floor contains classrooms only; no administrative or public services are offered here."
+          }
+        ]
+      }
+    ]
+  }
+}

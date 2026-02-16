@@ -1,0 +1,661 @@
+{
+  "site_id": "Hospital_RMH_0001",
+  "site_type": "Hospital",
+  "location": {
+    "province": "Kigali",
+    "district": "Kicukiro",
+    "sector": "Nyarugunga"
+  },
+  "structure": {
+    "site_layout": "multi_site",
+    "buildings": [
+      {
+        "building_id": "Hospital_RMH_Rec",
+        "building_name": "Reception",
+        "total_floors": 1,
+        "entrance": {
+          "step_free": true,
+          "ramps_present": true,
+          "stairs_present": true,
+          "main_entrance_accessible": true
+        },
+        "floors": [
+          {
+            "floor_level": "0",
+            "floor_name": "Ground Floor",
+            "services": ["customer_care", "cashier", "insurance"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "building_id": "Hospital_RMH_Off",
+        "building_name": "Offices",
+        "total_floors": 1,
+        "entrance": {
+          "step_free": true,
+          "ramps_present": false,
+          "stairs_present": false,
+          "main_entrance_accessible": true
+        },
+        "floors": [
+          {
+            "floor_level": "0",
+            "floor_name": "Ground Floor",
+            "services": [
+              "co's_office",
+              "finance",
+              "procurement",
+              "hr_office",
+              "it_office"
+            ],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "building_id": "Hospital_RMH_Ophtha",
+        "building_name": "Ophthalmology",
+        "total_floors": 1,
+        "entrance": {
+          "step_free": true,
+          "ramps_present": true,
+          "stairs_present": false,
+          "main_entrance_accessible": true
+        },
+        "floors": [
+          {
+            "floor_level": "0",
+            "floor_name": "Ground Floor",
+            "services": ["consultation", "cashier"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "building_id": "Hospital_RMH_Acc",
+        "building_name": "Accident Emergency",
+        "total_floors": 1,
+        "entrance": {
+          "step_free": true,
+          "ramps_present": true,
+          "stairs_present": false,
+          "main_entrance_accessible": true
+        },
+        "floors": [
+          {
+            "floor_level": "0",
+            "floor_name": "Ground Floor",
+            "services": ["icu", "picu"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "building_id": "Hospital_RMH_Derma",
+        "building_name": "Dermatology Consultation",
+        "total_floors": 1,
+        "entrance": {
+          "step_free": true,
+          "ramps_present": false,
+          "stairs_present": false,
+          "main_entrance_accessible": true
+        },
+        "floors": [
+          {
+            "floor_level": "0",
+            "floor_name": "Ground Floor",
+            "services": ["consultation", "distribution_pharmacy"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "building_id": "Hospital_RMH_OPD",
+        "building_name": "OPD Consultation",
+        "total_floors": 1,
+        "entrance": {
+          "step_free": true,
+          "ramps_present": false,
+          "stairs_present": false,
+          "main_entrance_accessible": true
+        },
+        "floors": [
+          {
+            "floor_level": "0",
+            "floor_name": "Ground Floor",
+            "services": ["consultation"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "building_id": "Hospital_RMH_Med",
+        "building_name": "Medical Emergency",
+        "total_floors": 1,
+        "entrance": {
+          "step_free": true,
+          "ramps_present": true,
+          "stairs_present": true,
+          "main_entrance_accessible": true
+        },
+        "floors": [
+          {
+            "floor_level": "0",
+            "floor_name": "Ground Floor",
+            "services": ["hospitalization"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "building_id": "Hospital_RMH_Int",
+        "building_name": "Internal Medicine",
+        "total_floors": 2,
+        "entrance": {
+          "step_free": true,
+          "ramps_present": true,
+          "stairs_present": true,
+          "main_entrance_accessible": true
+        },
+        "vertical_access": {
+          "elevator_present": true,
+          "elevator_accessible": true,
+          "stairs_present": true,
+          "handrails_present": true
+        },
+        "floors": [
+          {
+            "floor_level": "0",
+            "floor_name": "Ground Floor",
+            "services": ["opd_consultation"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          },
+          {
+            "floor_level": "1",
+            "floor_name": "First Floor",
+            "services": ["hospitalization"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "building_id": "Hospital_RMH_Sur",
+        "building_name": "Surgical Ward",
+        "total_floors": 1,
+        "entrance": {
+          "step_free": true,
+          "ramps_present": true,
+          "stairs_present": true,
+          "main_entrance_accessible": true
+        },
+        "floors": [
+          {
+            "floor_level": "0",
+            "floor_name": "Ground Floor",
+            "services": ["hospitalization", "laboratory", "sub_pharmacy"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "building_id": "Hospital_RMH_Orl",
+        "building_name": "ORL",
+        "total_floors": 1,
+        "entrance": {
+          "step_free": true,
+          "ramps_present": true,
+          "stairs_present": true,
+          "main_entrance_accessible": true
+        },
+        "floors": [
+          {
+            "floor_level": "0",
+            "floor_name": "Ground Floor",
+            "services": ["endoscopy", "colonoscopy"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "building_id": "Hospital_RMH_Ped",
+        "building_name": "Pediatrics",
+        "total_floors": 1,
+        "entrance": {
+          "step_free": true,
+          "ramps_present": true,
+          "stairs_present": false,
+          "main_entrance_accessible": true
+        },
+        "floors": [
+          {
+            "floor_level": "0",
+            "floor_name": "Ground Floor",
+            "services": ["hospitalization", "consultation"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "building_id": "Hospital_RMH_Den",
+        "building_name": "Dental",
+        "total_floors": 1,
+        "entrance": {
+          "step_free": true,
+          "ramps_present": false,
+          "stairs_present": false,
+          "main_entrance_accessible": true
+        },
+        "floors": [
+          {
+            "floor_level": "0",
+            "floor_name": "Ground Floor",
+            "services": ["treatment", "consultation"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "building_id": "Hospital_RMH_Phy",
+        "building_name": "Physiotherapy",
+        "total_floors": 1,
+        "entrance": {
+          "step_free": true,
+          "ramps_present": true,
+          "stairs_present": false,
+          "main_entrance_accessible": true
+        },
+        "floors": [
+          {
+            "floor_level": "0",
+            "floor_name": "Ground Floor",
+            "services": ["treatment", "consultation"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "building_id": "Hospital_RMH_Res",
+        "building_name": "Restaurant",
+        "total_floors": 1,
+        "entrance": {
+          "step_free": true,
+          "ramps_present": true,
+          "stairs_present": false,
+          "main_entrance_accessible": true
+        },
+        "floors": [
+          {
+            "floor_level": "0",
+            "floor_name": "Ground Floor",
+            "services": ["restaurant"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "building_id": "Hospital_RMH_Mat",
+        "building_name": "Maternity Ward",
+        "total_floors": 1,
+        "entrance": {
+          "step_free": true,
+          "ramps_present": true,
+          "stairs_present": false,
+          "main_entrance_accessible": true
+        },
+        "floors": [
+          {
+            "floor_level": "0",
+            "floor_name": "Ground Floor",
+            "services": [
+              "labor",
+              "consultation",
+              "neonatology",
+              "nicu",
+              "picu"
+            ],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "building_id": "Hospital_RMH_Rcc",
+        "building_name": "Rwanda Cancer Center",
+        "total_floors": 1,
+        "entrance": {
+          "step_free": true,
+          "ramps_present": true,
+          "stairs_present": false,
+          "main_entrance_accessible": true
+        },
+        "floors": [
+          {
+            "floor_level": "0",
+            "floor_name": "Ground Floor",
+            "services": [
+              "treatment",
+              "consultation",
+              "sub_pharmacy",
+              "radio_theraphy"
+            ],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "building_id": "Hospital_RMH_Rad",
+        "building_name": "Radiology Department",
+        "total_floors": 1,
+        "entrance": {
+          "step_free": true,
+          "ramps_present": true,
+          "stairs_present": false,
+          "main_entrance_accessible": true
+        },
+        "floors": [
+          {
+            "floor_level": "0",
+            "floor_name": "Ground Floor",
+            "services": ["scanner", "radiography", "mri"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "building_id": "Hospital_RMH_Muh",
+        "building_name": "Muhabura Wing",
+        "total_floors": 3,
+        "entrance": {
+          "step_free": true,
+          "ramps_present": true,
+          "stairs_present": false,
+          "main_entrance_accessible": true
+        },
+        "vertical_access": {
+          "elevator_present": true,
+          "elevator_accessible": true,
+          "stairs_present": true,
+          "handrails_present": true
+        },
+        "floors": [
+          {
+            "floor_level": "0",
+            "floor_name": "Ground Floor",
+            "services": [
+              "reception",
+              "pharmacy",
+              "emergency",
+              "restaurant",
+              "cashier"
+            ],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          },
+          {
+            "floor_level": "1",
+            "floor_name": "First Floor",
+            "services": ["consultation", "laboratory", "cashier"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          },
+          {
+            "floor_level": "2",
+            "floor_name": "Second Floor",
+            "services": ["hospitalization"],
+            "accessibility": {
+              "mobility_accessible": true,
+              "vision_support": {
+                "clear_signage": true,
+                "high_contrast_signage": true
+              },
+              "hearing_support": {
+                "written_instructions": true
+              },
+              "cognitive_support": {
+                "information_desk": true
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
