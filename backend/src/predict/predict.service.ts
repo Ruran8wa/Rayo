@@ -1,23 +1,13 @@
 import { Injectable, Logger, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { spawn } from 'child_process';
-import * as path from 'path';
 
 @Injectable()
 export class PredictService {
   private readonly logger = new Logger(PredictService.name);
-  private readonly scriptPath: string;
+  private readonly mlApiUrl: string;
 
   constructor(private readonly prisma: PrismaService) {
-    this.scriptPath = path.resolve(
-      __dirname,
-      '..',
-      '..',
-      '..',
-      'ml',
-      'scripts',
-      'predict.py',
-    );
+    this.mlApiUrl = process.env.ML_API_URL ?? 'http://localhost:8000';
   }
 
   async predict(buildingId: string): Promise<{ accessibility_class: string; accessibility_score: number }> {
@@ -36,7 +26,7 @@ export class PredictService {
       throw new NotFoundException(`Building ${buildingId} not found`);
     }
 
-    const buildingJson = {
+    const payload = {
       site_type: building.site.site_type,
       structure: {
         buildings: [
@@ -69,12 +59,22 @@ export class PredictService {
     };
 
     let result: { accessibility_class: string; accessibility_score: number };
+
     try {
-      result = await this.runPython(JSON.stringify(buildingJson));
+      const response = await fetch(`${this.mlApiUrl}/predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`ML API responded with ${response.status}: ${error}`);
+      }
+
+      result = await response.json() as { accessibility_class: string; accessibility_score: number };
     } catch (error) {
-      this.logger.error(
-        `Prediction failed for building ${buildingId}: ${(error as Error).message}`,
-      );
+      this.logger.error(`Prediction failed for building ${buildingId}: ${(error as Error).message}`);
       throw new InternalServerErrorException('ML prediction failed');
     }
 
@@ -91,48 +91,5 @@ export class PredictService {
     );
 
     return result;
-  }
-
-  private runPython(
-    input: string,
-  ): Promise<{ accessibility_class: string; accessibility_score: number }> {
-    return new Promise((resolve, reject) => {
-      const venvPython = path.resolve(this.scriptPath, '..', '..', '.venv', 'bin', 'python3');
-      const child = spawn(venvPython, [this.scriptPath]);
-      let stdout = '';
-      let stderr = '';
-
-      child.stdout.on('data', (data: Buffer) => {
-        stdout += data.toString();
-      });
-
-      child.stderr.on('data', (data: Buffer) => {
-        stderr += data.toString();
-      });
-
-      child.on('close', (code) => {
-        if (code !== 0) {
-          reject(
-            new Error(`predict.py exited with code ${code}: ${stderr}`),
-          );
-          return;
-        }
-        if (stderr) {
-          this.logger.warn(`predict.py stderr: ${stderr}`);
-        }
-        try {
-          resolve(JSON.parse(stdout.trim()));
-        } catch {
-          reject(new Error(`Failed to parse predict.py output: ${stdout}`));
-        }
-      });
-
-      child.on('error', (err) => {
-        reject(new Error(`Failed to spawn predict.py: ${err.message}`));
-      });
-
-      child.stdin.write(input);
-      child.stdin.end();
-    });
   }
 }
