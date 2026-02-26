@@ -6,12 +6,14 @@ import { BuildingsModule } from './buildings/buildings.module';
 import { ServicesModule } from './services/services.module';
 import { UsersModule } from './users/users.module';
 import { PredictModule } from './predict/predict.module';
+import { SitesModule } from './sites/sites.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     AuthModule,
+    SitesModule,
     BuildingsModule,
     ServicesModule,
     UsersModule,
