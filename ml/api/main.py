@@ -25,6 +25,11 @@ class PredictionResult(BaseModel):
     accessibility_score: float
 
 
+@app.get("/")
+def root():
+    return {"service": "Rayo ML API", "status": "ok", "docs": "/docs"}
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
