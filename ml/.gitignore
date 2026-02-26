@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.venv/
+*.png
+.ipynb_checkpoints/
+data/processed/building_level.csv
