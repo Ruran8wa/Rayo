@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Site {
+  id         String     @id @default(uuid())
+  name       String
+  site_type  String
+  address    String     @default("")
+  lat        Float
+  lng        Float
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
+  buildings  Building[]
+
+  @@map("sites")
+}
+
+model Building {
+  id                  String       @id @default(uuid())
+  site_id             String
+  building_name       String
+  total_floors        Int
+  step_free_entrance  Boolean      @default(false)
+  elevator_present    Boolean      @default(false)
+  handrails_present   Boolean      @default(false)
+  ramps_present       Boolean      @default(false)
+  accessibility_class String?
+  accessibility_score Float?
+  lat                 Float?
+  lng                 Float?
+  created_at          DateTime     @default(now())
+  updated_at          DateTime     @updatedAt
+
+  site         Site         @relation(fields: [site_id], references: [id], onDelete: Cascade)
+  floors       Floor[]
+  saved_places SavedPlace[]
+
+  @@index([site_id])
+  @@index([lat, lng])
+  @@map("buildings")
+}
+
+model Floor {
+  id                    String    @id @default(uuid())
+  building_id           String
+  floor_level           Int
+  mobility_accessible   Boolean   @default(false)
+  clear_signage         Boolean   @default(false)
+  high_contrast_signage Boolean   @default(false)
+
+  building Building  @relation(fields: [building_id], references: [id], onDelete: Cascade)
+  services Service[]
+
+  @@index([building_id])
+  @@map("floors")
+}
+
+model Service {
+  id            String  @id @default(uuid())
+  floor_id      String
+  name          String
+  is_critical   Boolean @default(false)
+  is_accessible Boolean @default(false)
+
+  floor Floor @relation(fields: [floor_id], references: [id], onDelete: Cascade)
+
+  @@index([floor_id])
+  @@index([name])
+  @@map("services")
+}
+
+model UserPreference {
+  id              String   @id @default(uuid())
+  user_id         String   @unique
+  disability_type String
+  preferences     Json
+  updated_at      DateTime @updatedAt
+
+  @@map("user_preferences")
+}
+
+model SavedPlace {
+  id          String   @id @default(uuid())
+  user_id     String
+  building_id String
+  saved_at    DateTime @default(now())
+
+  building Building @relation(fields: [building_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, building_id])
+  @@index([user_id])
+  @@map("saved_places")
+}
