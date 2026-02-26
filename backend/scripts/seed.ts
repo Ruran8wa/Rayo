@@ -7,8 +7,6 @@ import { spawn } from 'child_process';
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
-// ---------- helpers ----------
-
 const CRITICAL_SERVICES = new Set([
   'icu',
   'picu',
@@ -52,11 +50,7 @@ function isServiceAccessible(
   return mobilityAccessible && floorReachable;
 }
 
-// Approximate site coordinates in Kigali
-const SITE_COORDS: Record<
-  string,
-  { lat: number; lng: number; address: string }
-> = {
+const SITE_COORDS: Record<string, { lat: number; lng: number; address: string }> = {
   SCHOOL_ALU_001: {
     lat: -1.9028,
     lng: 30.1126,
@@ -69,8 +63,6 @@ const SITE_COORDS: Record<
   },
 };
 
-// ---------- prediction helper ----------
-
 function runPrediction(
   buildingJson: Record<string, unknown>,
   scriptPath: string,
@@ -81,12 +73,8 @@ function runPrediction(
     let stdout = '';
     let stderr = '';
 
-    child.stdout.on('data', (data: Buffer) => {
-      stdout += data.toString();
-    });
-    child.stderr.on('data', (data: Buffer) => {
-      stderr += data.toString();
-    });
+    child.stdout.on('data', (data: Buffer) => { stdout += data.toString(); });
+    child.stderr.on('data', (data: Buffer) => { stderr += data.toString(); });
 
     child.on('close', (code) => {
       if (code !== 0) {
@@ -105,8 +93,6 @@ function runPrediction(
     child.stdin.end();
   });
 }
-
-// ---------- seed one site file ----------
 
 async function seedSite(filePath: string) {
   const raw = fs.readFileSync(filePath, 'utf-8');
@@ -141,7 +127,6 @@ async function seedSite(filePath: string) {
     const handrails = Boolean(vertical.handrails_present);
     const ramps = Boolean(entrance.ramps_present);
 
-    // Slight random offset so buildings aren't stacked on the same point
     const buildingLat = coords.lat + (Math.random() - 0.5) * 0.002;
     const buildingLng = coords.lng + (Math.random() - 0.5) * 0.002;
 
@@ -181,12 +166,7 @@ async function seedSite(filePath: string) {
 
       const services: string[] = floor.services || [];
       for (const svcName of services) {
-        const accessible = isServiceAccessible(
-          floorLevel,
-          mobilityAccessible,
-          stepFree,
-          elevator,
-        );
+        const accessible = isServiceAccessible(floorLevel, mobilityAccessible, stepFree, elevator);
 
         await prisma.service.create({
           data: {
@@ -203,12 +183,9 @@ async function seedSite(filePath: string) {
   }
 }
 
-// ---------- main ----------
-
 async function main() {
-  console.log('🌱 Seeding database...\n');
+  console.log('Seeding database...\n');
 
-  // Clear existing data (order respects FK constraints)
   await prisma.savedPlace.deleteMany();
   await prisma.userPreference.deleteMany();
   await prisma.service.deleteMany();
@@ -218,46 +195,29 @@ async function main() {
 
   console.log('Cleared existing data.\n');
 
-  const dataDir = path.resolve(
-    __dirname,
-    '..',
-    '..',
-    'ml',
-    'data',
-    'real_world',
-  );
+  const dataDir = path.resolve(__dirname, '..', '..', 'ml', 'data', 'real_world');
   const aluPath = path.join(dataDir, 'ALU.json');
   const rmhPath = path.join(dataDir, 'RMH.json');
 
   if (fs.existsSync(aluPath)) {
     await seedSite(aluPath);
   } else {
-    console.warn(`⚠️  ALU.json not found at ${aluPath}`);
+    console.warn(`ALU.json not found at ${aluPath}`);
   }
 
   if (fs.existsSync(rmhPath)) {
     await seedSite(rmhPath);
   } else {
-    console.warn(`⚠️  RMH.json not found at ${rmhPath}`);
+    console.warn(`RMH.json not found at ${rmhPath}`);
   }
 
-  // ---------- trigger predictions ----------
-  console.log('\n🔮 Running predictions...');
+  console.log('\nRunning predictions...');
 
-  const predictScript = path.resolve(
-    __dirname,
-    '..',
-    '..',
-    'ml',
-    'scripts',
-    'predict.py',
-  );
+  const predictScript = path.resolve(__dirname, '..', '..', 'ml', 'scripts', 'predict.py');
 
   if (!fs.existsSync(predictScript)) {
-    console.warn(
-      `⚠️  predict.py not found at ${predictScript}. Skipping predictions.`,
-    );
-    console.log('\n✨ Seeding complete!');
+    console.warn(`predict.py not found at ${predictScript}. Skipping predictions.`);
+    console.log('\nSeeding complete.');
     return;
   }
 
@@ -315,15 +275,13 @@ async function main() {
         },
       });
 
-      console.log(
-        `  ✅ ${b.building_name}: ${result.accessibility_class} (${result.accessibility_score})`,
-      );
+      console.log(`  ${b.building_name}: ${result.accessibility_class} (${result.accessibility_score})`);
     } catch (error) {
-      console.error(`  ❌ ${b.building_name}: ${(error as Error).message}`);
+      console.error(`  Failed - ${b.building_name}: ${(error as Error).message}`);
     }
   }
 
-  console.log('\n✨ Seeding complete!');
+  console.log('\nSeeding complete.');
 }
 
 main()

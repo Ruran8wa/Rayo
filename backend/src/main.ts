@@ -8,13 +8,9 @@ import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // CORS
   app.enableCors();
-
-  // Global prefix
   app.setGlobalPrefix('api');
 
-  // Validation
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -23,13 +19,9 @@ async function bootstrap() {
     }),
   );
 
-  // Global response wrapper
   app.useGlobalInterceptors(new ResponseInterceptor());
-
-  // Global exception filter
   app.useGlobalFilters(new GlobalExceptionFilter());
 
-  // Swagger
   const config = new DocumentBuilder()
     .setTitle('Rayo API')
     .setDescription('Accessibility information for buildings and services')

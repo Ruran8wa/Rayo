@@ -18,8 +18,8 @@ function runPrediction(
     let stdout = '';
     let stderr = '';
 
-    child.stdout.on('data', (d: Buffer) => (stdout += d.toString()));
-    child.stderr.on('data', (d: Buffer) => (stderr += d.toString()));
+    child.stdout.on('data', (d: Buffer) => { stdout += d.toString(); });
+    child.stderr.on('data', (d: Buffer) => { stderr += d.toString(); });
 
     child.on('close', (code) => {
       if (code !== 0) {
@@ -98,10 +98,10 @@ async function main() {
         },
       });
 
-      console.log(`✅ ${b.building_name}: ${result.accessibility_class} (score: ${result.accessibility_score})`);
+      console.log(`${b.building_name}: ${result.accessibility_class} (score: ${result.accessibility_score})`);
       success++;
     } catch (err) {
-      console.error(`❌ ${b.building_name}: ${(err as Error).message}`);
+      console.error(`Failed - ${b.building_name}: ${(err as Error).message}`);
       failed++;
     }
   }
@@ -110,5 +110,8 @@ async function main() {
 }
 
 main()
-  .catch((e) => { console.error(e); process.exit(1); })
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
   .finally(() => prisma.$disconnect());

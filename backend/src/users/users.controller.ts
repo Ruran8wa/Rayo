@@ -14,6 +14,8 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { PreferencesDto } from './dto/preferences.dto';
 import { SavedPlaceDto } from './dto/saved-place.dto';
 
+type AuthUser = { userId: string };
+
 @ApiTags('Users')
 @ApiBearerAuth()
 @UseGuards(SupabaseGuard)
@@ -23,40 +25,31 @@ export class UsersController {
 
   @Get('preferences')
   @ApiOperation({ summary: 'Get user disability preferences' })
-  getPreferences(@CurrentUser() user: { userId: string }) {
+  getPreferences(@CurrentUser() user: AuthUser) {
     return this.usersService.getPreferences(user.userId);
   }
 
   @Post('preferences')
   @ApiOperation({ summary: 'Set/update user disability preferences' })
-  upsertPreferences(
-    @CurrentUser() user: { userId: string },
-    @Body() dto: PreferencesDto,
-  ) {
+  upsertPreferences(@CurrentUser() user: AuthUser, @Body() dto: PreferencesDto) {
     return this.usersService.upsertPreferences(user.userId, dto);
   }
 
   @Get('saved-places')
   @ApiOperation({ summary: 'List saved buildings' })
-  getSavedPlaces(@CurrentUser() user: { userId: string }) {
+  getSavedPlaces(@CurrentUser() user: AuthUser) {
     return this.usersService.getSavedPlaces(user.userId);
   }
 
   @Post('saved-places')
   @ApiOperation({ summary: 'Save a building' })
-  savePlace(
-    @CurrentUser() user: { userId: string },
-    @Body() dto: SavedPlaceDto,
-  ) {
+  savePlace(@CurrentUser() user: AuthUser, @Body() dto: SavedPlaceDto) {
     return this.usersService.savePlace(user.userId, dto.buildingId);
   }
 
   @Delete('saved-places/:id')
   @ApiOperation({ summary: 'Remove a saved building' })
-  removePlace(
-    @CurrentUser() user: { userId: string },
-    @Param('id') id: string,
-  ) {
+  removePlace(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.usersService.removePlace(user.userId, id);
   }
 }

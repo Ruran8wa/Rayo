@@ -72,8 +72,12 @@ export class UsersService {
         },
       });
     } catch (error: unknown) {
-      const prismaError = error as { code?: string };
-      if (prismaError.code === 'P2002') {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code: string }).code === 'P2002'
+      ) {
         throw new ConflictException('Building already saved');
       }
       throw error;

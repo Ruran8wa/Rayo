@@ -97,7 +97,6 @@ export class ServicesService {
       }));
     }
 
-    // Fallback: no location provided — simple name search
     const services = await this.prisma.service.findMany({
       where: { name: { contains: q, mode: 'insensitive' } },
       include: {
