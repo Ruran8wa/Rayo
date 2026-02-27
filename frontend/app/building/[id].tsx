@@ -7,14 +7,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AccessibilityBadge } from "@components/ui/accessibility-badge";
 import { Text } from "@components/ui/text";
 import { FloorCard } from "@components/buildings/floor-card";
-import { Colors, Spacing } from "@constants/theme";
+import { BorderRadius, Colors, Spacing } from "@constants/theme";
 import { buildingsService } from "@services/api/buildings.service";
 
 export default function BuildingDetail() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string }>();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
   const router = useRouter();
 
-  const { data: building, isLoading } = useQuery({
+  const { data: building, isLoading, isError } = useQuery({
     queryKey: ["building", id],
     queryFn: () => buildingsService.getById(id),
   });
@@ -23,6 +24,14 @@ export default function BuildingDetail() {
     return (
       <View style={styles.loading}>
         <ActivityIndicator color={Colors.primary} size="large" />
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <View style={styles.loading}>
+        <Text variant="body" color={Colors.textSecondary}>Could not load building details.</Text>
       </View>
     );
   }
@@ -91,7 +100,7 @@ const styles = StyleSheet.create({
   badge: {
     borderWidth: 1,
     borderColor: Colors.white + "40",
-    borderRadius: 100,
+    borderRadius: BorderRadius.pill,
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
   },

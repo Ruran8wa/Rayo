@@ -19,7 +19,7 @@ export function ServiceRow({ service }: Props) {
       <View style={styles.info}>
         <Text variant="bodySm" bold>{service.name}</Text>
         <Text variant="caption" color={Colors.textSecondary}>
-          {service.features.join(" · ")}
+          {(service.features ?? []).join(" · ")}
         </Text>
       </View>
       <AccessibilityBadge level={service.accessibility_level} />
