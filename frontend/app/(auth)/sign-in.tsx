@@ -49,8 +49,8 @@ export default function SignIn() {
     try {
       await signIn(email, password);
       router.replace("/(tabs)");
-    } catch (e: any) {
-      setError(e.message ?? "Sign in failed");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Sign in failed");
       triggerShake();
     } finally {
       setLoading(false);

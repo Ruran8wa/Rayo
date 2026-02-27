@@ -66,8 +66,8 @@ export default function Register() {
         disabilityType === "None" ? undefined : disabilityType
       );
       router.replace("/(tabs)");
-    } catch (e: any) {
-      setError(e.message ?? "Registration failed");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Registration failed");
       triggerShake();
     } finally {
       setLoading(false);
@@ -125,42 +125,42 @@ export default function Register() {
               />
             </View>
 
+            <View style={styles.field}>
+              <Text variant="label" semiBold style={styles.label}>
+                DISABILITY TYPE <Text variant="label" color={Colors.textSecondary}>(OPTIONAL)</Text>
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.chipRow}
+              >
+                {DISABILITY_OPTIONS.map((option) => {
+                  const isActive = disabilityType === option;
+                  return (
+                    <Pressable
+                      key={option}
+                      onPress={() => setDisabilityType(option)}
+                      style={[styles.chip, isActive && styles.chipActive]}
+                    >
+                      <Text
+                        variant="label"
+                        semiBold={isActive}
+                        color={isActive ? Colors.white : Colors.textPrimary}
+                      >
+                        {option}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+
             {error && (
               <Text variant="caption" color={Colors.notAccessible} style={styles.error}>
                 {error}
               </Text>
             )}
           </Animated.View>
-
-          <View style={styles.field}>
-            <Text variant="label" semiBold style={styles.label}>
-              DISABILITY TYPE <Text variant="label" color={Colors.textSecondary}>(OPTIONAL)</Text>
-            </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.chipRow}
-            >
-              {DISABILITY_OPTIONS.map((option) => {
-                const isActive = disabilityType === option;
-                return (
-                  <Pressable
-                    key={option}
-                    onPress={() => setDisabilityType(option)}
-                    style={[styles.chip, isActive && styles.chipActive]}
-                  >
-                    <Text
-                      variant="label"
-                      semiBold={isActive}
-                      color={isActive ? Colors.white : Colors.textPrimary}
-                    >
-                      {option}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </View>
 
           <Button
             label="Create account"
