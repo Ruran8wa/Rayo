@@ -11,7 +11,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name: string, disabilityType?: string) => Promise<void>;
   signOut: () => Promise<void>;
-  updateUser: (user: User) => void;
+  updateUser: (user: User) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,30 +22,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const bootstrap = async () => {
+      try {
+        const storedToken = await storage.get<string>("auth_token");
+        const storedUser = await storage.get<User>("user");
+        if (storedToken && storedUser) {
+          apiClient.setAuthToken(storedToken);
+          setToken(storedToken);
+          setUser(storedUser);
+        }
+      } catch (e) {
+        console.error("Auth bootstrap error:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
     bootstrap();
   }, []);
 
-  const bootstrap = async () => {
-    try {
-      const storedToken = await storage.get<string>("auth_token");
-      const storedUser = await storage.get<User>("user");
-      if (storedToken && storedUser) {
-        apiClient.setAuthToken(storedToken);
-        setToken(storedToken);
-        setUser(storedUser);
-      }
-    } catch (e) {
-      console.error("Auth bootstrap error:", e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const signIn = async (email: string, password: string) => {
     const { user: u, tokens } = await authService.login(email, password);
+    try {
+      await storage.set("auth_token", tokens.access_token);
+      await storage.set("user", u);
+    } catch (e) {
+      apiClient.removeAuthToken();
+      throw e;
+    }
     apiClient.setAuthToken(tokens.access_token);
-    await storage.set("auth_token", tokens.access_token);
-    await storage.set("user", u);
     setToken(tokens.access_token);
     setUser(u);
   };
@@ -57,9 +61,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     disabilityType?: string
   ) => {
     const { user: u, tokens } = await authService.register(name, email, password, disabilityType);
+    try {
+      await storage.set("auth_token", tokens.access_token);
+      await storage.set("user", u);
+    } catch (e) {
+      apiClient.removeAuthToken();
+      throw e;
+    }
     apiClient.setAuthToken(tokens.access_token);
-    await storage.set("auth_token", tokens.access_token);
-    await storage.set("user", u);
     setToken(tokens.access_token);
     setUser(u);
   };
@@ -72,9 +81,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
   };
 
-  const updateUser = (u: User) => {
+  const updateUser = async (u: User): Promise<void> => {
     setUser(u);
-    storage.set("user", u);
+    await storage.set("user", u);
   };
 
   return (
