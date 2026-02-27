@@ -1,135 +1,91 @@
-/**
- * Authentication Context
- * Manages user authentication state and operations
- */
-
-import React, {
-    createContext,
-    ReactNode,
-    useContext,
-    useEffect,
-    useState,
-} from "react";
+import React, { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import type { Nullable, User } from "../types/index";
+import { authService } from "../services/api/auth.service";
+import { apiClient } from "../services/api/client";
 import { storage } from "../utils/storage";
 
 interface AuthContextType {
   user: Nullable<User>;
+  token: Nullable<string>;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, name: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string, disabilityType?: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<Nullable<User>>(null);
+  const [token, setToken] = useState<Nullable<string>>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadStoredUser();
+    bootstrap();
   }, []);
 
-  const loadStoredUser = async () => {
+  const bootstrap = async () => {
     try {
+      const storedToken = await storage.get<string>("auth_token");
       const storedUser = await storage.get<User>("user");
-      if (storedUser) {
+      if (storedToken && storedUser) {
+        apiClient.setAuthToken(storedToken);
+        setToken(storedToken);
         setUser(storedUser);
       }
-    } catch (error) {
-      console.error("Failed to load user:", error);
+    } catch (e) {
+      console.error("Auth bootstrap error:", e);
     } finally {
       setLoading(false);
     }
   };
 
   const signIn = async (email: string, password: string) => {
-    try {
-      // TODO: Implement actual API call
-      // const response = await authService.signIn(email, password);
-      // const userData = response.data;
-
-      // Mock user for now
-      const userData: User = {
-        id: "1",
-        email,
-        name: "User Name",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      await storage.set("user", userData);
-      setUser(userData);
-    } catch (error) {
-      console.error("Sign in failed:", error);
-      throw error;
-    }
+    const { user: u, tokens } = await authService.login(email, password);
+    apiClient.setAuthToken(tokens.access_token);
+    await storage.set("auth_token", tokens.access_token);
+    await storage.set("user", u);
+    setToken(tokens.access_token);
+    setUser(u);
   };
 
-  const signUp = async (email: string, password: string, name: string) => {
-    try {
-      // TODO: Implement actual API call
-      // const response = await authService.signUp(email, password, name);
-      // const userData = response.data;
-
-      // Mock user for now
-      const userData: User = {
-        id: "1",
-        email,
-        name,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      await storage.set("user", userData);
-      setUser(userData);
-    } catch (error) {
-      console.error("Sign up failed:", error);
-      throw error;
-    }
+  const signUp = async (
+    email: string,
+    password: string,
+    name: string,
+    disabilityType?: string
+  ) => {
+    const { user: u, tokens } = await authService.register(name, email, password, disabilityType);
+    apiClient.setAuthToken(tokens.access_token);
+    await storage.set("auth_token", tokens.access_token);
+    await storage.set("user", u);
+    setToken(tokens.access_token);
+    setUser(u);
   };
 
   const signOut = async () => {
-    try {
-      await storage.remove("user");
-      setUser(null);
-    } catch (error) {
-      console.error("Sign out failed:", error);
-      throw error;
-    }
+    apiClient.removeAuthToken();
+    await storage.remove("auth_token");
+    await storage.remove("user");
+    setToken(null);
+    setUser(null);
   };
 
-  const updateUser = (updatedUser: User) => {
-    setUser(updatedUser);
-    storage.set("user", updatedUser);
+  const updateUser = (u: User) => {
+    setUser(u);
+    storage.set("user", u);
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        signIn,
-        signUp,
-        signOut,
-        updateUser,
-      }}
-    >
+    <AuthContext.Provider value={{ user, token, loading, signIn, signUp, signOut, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
 };
