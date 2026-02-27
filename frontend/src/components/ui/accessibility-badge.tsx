@@ -3,7 +3,8 @@ import { StyleSheet, View } from "react-native";
 import { BorderRadius, Colors, Spacing } from "@constants/theme";
 import { Text } from "./text";
 
-export type AccessibilityLevel = "fully" | "partial" | "none";
+import type { AccessibilityLevel } from "@/types";
+export type { AccessibilityLevel };  // re-export for backwards compatibility
 
 const CONFIG: Record<AccessibilityLevel, { label: string; color: string }> = {
   fully: { label: "Fully", color: Colors.fullyAccessible },

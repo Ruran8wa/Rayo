@@ -1,8 +1,8 @@
-/**
- * Common Type Definitions
- */
+// Utility types
+export type Nullable<T> = T | null;
+export type Optional<T> = T | undefined;
 
-// API Response Types
+// API
 export interface ApiResponse<T = any> {
   data: T;
   message?: string;
@@ -13,52 +13,117 @@ export interface ApiError {
   message: string;
   status: number;
   code?: string;
-  details?: any;
 }
 
-// Navigation Types
-export type RootStackParamList = {
-  "(tabs)": undefined;
-  modal: undefined;
-};
-
-export type TabParamList = {
-  index: undefined;
-  explore: undefined;
-};
-
-// Theme Types
-export type ColorScheme = "light" | "dark";
-
-export interface ThemeColors {
-  primary: string;
-  secondary: string;
-  background: string;
-  surface: string;
-  text: string;
-  textSecondary: string;
-  border: string;
-  error: string;
-  success: string;
-  warning: string;
-  info: string;
-}
-
-// User Types (Example)
+// Auth
 export interface User {
   id: string;
   email: string;
   name: string;
   avatar?: string;
+  disability_type?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-// Generic utility types
-export type Nullable<T> = T | null;
-export type Optional<T> = T | undefined;
-export type AsyncState<T> = {
-  data: Nullable<T>;
-  loading: boolean;
-  error: Nullable<ApiError>;
-};
+export interface AuthTokens {
+  access_token: string;
+  refresh_token?: string;
+}
+
+// Accessibility
+export type AccessibilityLevel = "fully" | "partial" | "none";
+
+// Service (room/amenity within a floor)
+export interface Service {
+  id: string;
+  name: string;
+  icon?: string;
+  accessibility_level: AccessibilityLevel;
+  features: string[]; // ["Ramp", "Elevator", "Braille", "Signs", "Wide door"]
+}
+
+// Floor
+export interface Floor {
+  id: string;
+  name: string;          // "Ground Floor (G)", "1st Floor"
+  floor_number: number;
+  services: Service[];
+}
+
+// Building
+export interface Building {
+  id: string;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  category: string;      // "Health", "Government", "Bank", etc.
+  accessibility_level: AccessibilityLevel;
+  is_open: boolean;
+  floor_count: number;
+  distance_km?: number;  // set client-side when user location is known
+  features: string[];    // top-level features
+  floors?: Floor[];      // populated in detail view
+}
+
+// Site (a campus/complex containing multiple buildings)
+export interface Site {
+  id: string;
+  name: string;
+  building_count: number;
+  buildings?: Building[];
+}
+
+// GeoJSON for map
+export interface BuildingFeature {
+  type: "Feature";
+  geometry: {
+    type: "Point";
+    coordinates: [number, number]; // [lng, lat]
+  };
+  properties: {
+    id: string;
+    name: string;
+    accessibility_level: AccessibilityLevel;
+    category: string;
+  };
+}
+
+export interface BuildingsGeoJSON {
+  type: "FeatureCollection";
+  features: BuildingFeature[];
+}
+
+// Review
+export interface Review {
+  id: string;
+  building_id: string;
+  building_name: string;
+  scope: "building" | "floor" | "service";
+  scope_name?: string;
+  accessibility_level: AccessibilityLevel;
+  comment: string;
+  helpful_votes: number;
+  photos: string[];
+  created_at: string;
+}
+
+// Badges
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  category: "community" | "building" | "photo";
+  requirement: string;
+  progress?: number;
+  required?: number;
+  earned: boolean;
+  earned_at?: string;
+}
+
+// User preferences
+export interface UserPreferences {
+  disability_type: string;
+  preferences: Record<string, any>;
+}
