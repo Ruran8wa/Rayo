@@ -1,15 +1,37 @@
 import Mapbox from "@rnmapbox/maps";
+import { useQuery } from "@tanstack/react-query";
 import ENV from "@config/env";
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { buildingsService } from "@services/api/buildings.service";
+import { useMapStore } from "@stores/map.store";
 import { MapSearchBar } from "@components/map/map-search-bar";
 import { CategoryChipRow } from "@components/map/category-chip-row";
+import { BuildingPins } from "@components/map/building-pins";
+import { BuildingPreviewSheet } from "@components/map/building-preview-sheet";
 import { Spacing } from "@constants/theme";
 
 Mapbox.setAccessToken(ENV.mapboxToken);
 
 export default function MapTab() {
   const insets = useSafeAreaInsets();
+  const { previewBuilding, setSelectedBuilding, clearSelection } = useMapStore();
+
+  const { data: geojson } = useQuery({
+    queryKey: ["buildings-geojson"],
+    queryFn: () =>
+      buildingsService.getGeoJSON({
+        south: -2.0,
+        west: 29.9,
+        north: -1.8,
+        east: 30.2,
+      }),
+  });
+
+  const handlePinPress = async (id: string) => {
+    const building = await buildingsService.getById(id);
+    setSelectedBuilding(building);
+  };
 
   return (
     <View style={styles.container}>
@@ -25,12 +47,20 @@ export default function MapTab() {
           centerCoordinate={[30.0619, -1.9441]}
           animationMode="none"
         />
+        {geojson && (
+          <BuildingPins geojson={geojson} onPinPress={handlePinPress} />
+        )}
       </Mapbox.MapView>
 
       <View style={[styles.overlay, { paddingTop: insets.top + Spacing.sm }]}>
         <MapSearchBar />
         <CategoryChipRow />
       </View>
+
+      <BuildingPreviewSheet
+        building={previewBuilding}
+        onClose={clearSelection}
+      />
     </View>
   );
 }
