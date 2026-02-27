@@ -19,6 +19,7 @@ module.exports = function (api) {
             "@hooks": "./src/hooks",
             "@constants": "./src/constants",
             "@assets": "./assets",
+            "@stores": "./src/stores",
           },
           extensions: [
             ".ios.js",
