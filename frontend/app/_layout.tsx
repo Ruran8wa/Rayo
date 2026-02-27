@@ -36,22 +36,23 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  const [dmSerifLoaded] = useDMSerif({ DMSerifDisplay_400Regular });
-  const [interLoaded] = useInter({
+  const [dmSerifLoaded, dmSerifError] = useDMSerif({ DMSerifDisplay_400Regular });
+  const [interLoaded, interError] = useInter({
     Inter_400Regular,
     Inter_600SemiBold,
     Inter_700Bold,
   });
 
   const fontsLoaded = dmSerifLoaded && interLoaded;
+  const fontsError = dmSerifError || interError;
 
   useEffect(() => {
-    if (fontsLoaded) {
+    if (fontsLoaded || fontsError) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, fontsError]);
 
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded && !fontsError) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
