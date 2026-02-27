@@ -28,14 +28,20 @@
     "plugins": [
       "expo-router",
       [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsDownloadToken": "YOUR_MAPBOX_SECRET_TOKEN"
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#1D3D2F",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#1D3D2F"
           }
         }
       ]
