@@ -3,7 +3,7 @@ export type Nullable<T> = T | null;
 export type Optional<T> = T | undefined;
 
 // API
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data: T;
   message?: string;
   status: number;
@@ -98,6 +98,7 @@ export interface BuildingsGeoJSON {
 // Review
 export interface Review {
   id: string;
+  user_id: string;
   building_id: string;
   building_name: string;
   scope: "building" | "floor" | "service";
@@ -125,5 +126,5 @@ export interface Badge {
 // User preferences
 export interface UserPreferences {
   disability_type: string;
-  preferences: Record<string, any>;
+  preferences: Record<string, string | number | boolean>;
 }

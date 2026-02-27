@@ -67,7 +67,6 @@ export class ApiClient {
           message: data.message || "An error occurred",
           status: response.status,
           code: data.code,
-          details: data.details,
         } as ApiError;
       }
 
