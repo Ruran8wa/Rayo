@@ -14,6 +14,8 @@ export function Chip({ label, active, onPress }: Props) {
     <Pressable
       onPress={onPress}
       style={[styles.chip, active ? styles.active : styles.inactive]}
+      accessibilityRole="button"
+      accessibilityLabel={label}
     >
       <Text
         variant="label"
