@@ -8,6 +8,8 @@ interface Props {
   onPinPress: (buildingId: string) => void;
 }
 
+// PIN_COLORS documents the values used in the SymbolLayer GL expressions below.
+// Mapbox GL expressions evaluate in native code and cannot reference JS objects directly.
 const PIN_COLORS = {
   fully: Colors.fullyAccessible,
   partial: Colors.partiallyAccessible,

@@ -1,6 +1,6 @@
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useRouter } from "expo-router";
-import React, { useMemo, useRef } from "react";
+import React, { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { AccessibilityBadge } from "@components/ui/accessibility-badge";
 import { Button } from "@components/ui/button";
@@ -16,7 +16,6 @@ interface Props {
 export function BuildingPreviewSheet({ building, onClose }: Props) {
   const router = useRouter();
   const snapPoints = useMemo(() => ["28%"], []);
-  const ref = useRef<BottomSheet>(null);
 
   const handleViewDetail = () => {
     if (!building) return;
@@ -27,7 +26,6 @@ export function BuildingPreviewSheet({ building, onClose }: Props) {
 
   return (
     <BottomSheet
-      ref={ref}
       snapPoints={snapPoints}
       enablePanDownToClose
       onClose={onClose}
@@ -73,13 +71,13 @@ const styles = StyleSheet.create({
   content: { padding: Spacing.xl },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   info: { flex: 1, marginRight: Spacing.base },
-  address: { marginTop: 4 },
+  address: { marginTop: Spacing.xs },
   features: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.sm, marginTop: Spacing.md },
   featureTag: {
     backgroundColor: Colors.background,
     borderRadius: BorderRadius.sm,
     paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: Spacing.xs,
     borderWidth: 1,
     borderColor: Colors.border,
   },

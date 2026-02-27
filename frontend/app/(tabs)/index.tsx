@@ -13,24 +13,24 @@ import { Spacing } from "@constants/theme";
 
 Mapbox.setAccessToken(ENV.mapboxToken);
 
+const KIGALI_BOUNDS = { south: -2.0, west: 29.9, north: -1.8, east: 30.2 } as const;
+
 export default function MapTab() {
   const insets = useSafeAreaInsets();
   const { previewBuilding, setSelectedBuilding, clearSelection } = useMapStore();
 
   const { data: geojson } = useQuery({
     queryKey: ["buildings-geojson"],
-    queryFn: () =>
-      buildingsService.getGeoJSON({
-        south: -2.0,
-        west: 29.9,
-        north: -1.8,
-        east: 30.2,
-      }),
+    queryFn: () => buildingsService.getGeoJSON(KIGALI_BOUNDS),
   });
 
   const handlePinPress = async (id: string) => {
-    const building = await buildingsService.getById(id);
-    setSelectedBuilding(building);
+    try {
+      const building = await buildingsService.getById(id);
+      setSelectedBuilding(building);
+    } catch (error) {
+      console.error("Failed to load building:", error);
+    }
   };
 
   return (
