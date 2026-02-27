@@ -16,6 +16,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { OnboardingSlide } from "@components/onboarding/slide";
 import { Button } from "@components/ui/button";
 import { Text } from "@components/ui/text";
 import { Colors, Spacing } from "@constants/theme";
@@ -46,11 +47,9 @@ export default function Onboarding() {
   const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
   const scrollX = useSharedValue(0);
-  const currentIndex = useSharedValue(0);
 
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     scrollX.value = e.nativeEvent.contentOffset.x;
-    currentIndex.value = Math.round(e.nativeEvent.contentOffset.x / W);
   };
 
   const handleContinue = () => {
@@ -92,20 +91,19 @@ export default function Onboarding() {
         style={styles.scroll}
       >
         {SLIDES.map((slide, i) => (
-          <View key={i} style={styles.slide}>
-            {/* Illustration placeholder */}
-            <View style={styles.illustration}>
-              <Ionicons
-                name={["location", "map", "layers", "star"][i] as any}
-                size={64}
-                color={Colors.white}
-              />
-            </View>
-            <Text variant="h1" style={styles.title}>{slide.title}</Text>
-            <Text variant="body" color={Colors.textSecondary} style={styles.subtitle}>
-              {slide.subtitle}
-            </Text>
-          </View>
+          <OnboardingSlide
+            key={i}
+            index={i}
+            title={slide.title}
+            subtitle={slide.subtitle}
+            scrollX={scrollX}
+          >
+            <Ionicons
+              name={(["location", "map", "layers", "star"] as const)[i]}
+              size={64}
+              color={Colors.white}
+            />
+          </OnboardingSlide>
         ))}
       </ScrollView>
 
@@ -169,21 +167,27 @@ function LastSlideActions({
   onCreateAccount: () => void;
   onGuest: () => void;
 }) {
-  const isLastSlide = useAnimatedStyle(() => ({
-    opacity: withSpring(Math.round(scrollX.value / W) === SLIDES.length - 1 ? 1 : 0),
-    display: Math.round(scrollX.value / W) === SLIDES.length - 1 ? "flex" : "none",
-  }));
-  const isNotLastSlide = useAnimatedStyle(() => ({
-    opacity: withSpring(Math.round(scrollX.value / W) !== SLIDES.length - 1 ? 1 : 0),
-    display: Math.round(scrollX.value / W) !== SLIDES.length - 1 ? "flex" : "none",
-  }));
+  const isLastSlideStyle = useAnimatedStyle(() => {
+    const isLast = Math.round(scrollX.value / W) === SLIDES.length - 1;
+    return {
+      opacity: withSpring(isLast ? 1 : 0, { damping: 15 }),
+      pointerEvents: isLast ? "auto" : "none",
+    };
+  });
+  const isNotLastSlideStyle = useAnimatedStyle(() => {
+    const isNotLast = Math.round(scrollX.value / W) !== SLIDES.length - 1;
+    return {
+      opacity: withSpring(isNotLast ? 1 : 0, { damping: 15 }),
+      pointerEvents: isNotLast ? "auto" : "none",
+    };
+  });
 
   return (
     <>
-      <Animated.View style={[styles.actions, isNotLastSlide]}>
+      <Animated.View style={[styles.actions, isNotLastSlideStyle]}>
         <Button label="Continue" onPress={onContinue} fullWidth />
       </Animated.View>
-      <Animated.View style={[styles.actions, isLastSlide]}>
+      <Animated.View style={[styles.actions, isLastSlideStyle]}>
         <Button label="Create an account" onPress={onCreateAccount} fullWidth />
         <Pressable onPress={onGuest} style={styles.guestLink}>
           <Text variant="label" color={Colors.textSecondary}>Continue as guest</Text>
@@ -197,17 +201,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   header: { paddingHorizontal: Spacing.xl, paddingVertical: Spacing.base, alignItems: "flex-end" },
   scroll: { flex: 1 },
-  slide: { width: W, paddingHorizontal: Spacing.xl, paddingTop: Spacing.lg },
-  illustration: {
-    height: 260,
-    borderRadius: 24,
-    backgroundColor: Colors.primary,
-    marginBottom: Spacing.xxl,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  title: { marginBottom: Spacing.md },
-  subtitle: { lineHeight: 26 },
   dots: { flexDirection: "row", justifyContent: "center", paddingVertical: Spacing.lg },
   footer: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xl },
   actions: { gap: Spacing.md },
