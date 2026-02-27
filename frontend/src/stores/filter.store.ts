@@ -23,7 +23,7 @@ export const MAP_CATEGORIES = [
 
 export type MapCategory = typeof MAP_CATEGORIES[number];
 
-interface FilterState {
+export interface FilterState {
   // Browse tab
   browseSearchQuery: string;
   activeBrowseFilters: BrowseFilter[];
