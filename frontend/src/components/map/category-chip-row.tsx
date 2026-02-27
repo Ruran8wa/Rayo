@@ -30,7 +30,6 @@ export function CategoryChipRow() {
 
 const styles = StyleSheet.create({
   row: {
-    paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.xs,
   },
 });

@@ -6,7 +6,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { BorderRadius, Colors, Shadow, Spacing } from "@constants/theme";
+import { BorderRadius, Colors, FontSize, Shadow, Spacing } from "@constants/theme";
 import { useFilterStore } from "@stores/filter.store";
 
 export function MapSearchBar() {
@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 15,
+    fontSize: FontSize.body,
     color: Colors.textPrimary,
     padding: 0,
   },
