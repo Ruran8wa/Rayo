@@ -1,5 +1,3 @@
-import Constants from "expo-constants";
-
 const ENV = {
   dev: {
     apiUrl: "https://rayo-backend-hzh7.onrender.com/api",

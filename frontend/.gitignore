@@ -19,3 +19,28 @@ web-build/
 # OS
 .DS_Store
 *.log
+
+# Native signing credentials - never commit these
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# Native generated folders
+/ios
+/android
+.kotlin/
+
+# TypeScript incremental build
+*.tsbuildinfo
+
+# Expo example app
+app-example
+
+# Debug logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.metro-health-check*
