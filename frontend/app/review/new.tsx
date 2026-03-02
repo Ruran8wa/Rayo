@@ -76,14 +76,16 @@ export default function WriteReview() {
           >
             WHAT ARE YOU REVIEWING?
           </Text>
-          {SCOPES.map((s) => (
-            <ScopeOption
-              key={s.value}
-              item={s}
-              selected={scope === s.value}
-              onSelect={() => setScope(s.value)}
-            />
-          ))}
+          <View accessibilityRole="radiogroup" accessibilityLabel="What are you reviewing?">
+            {SCOPES.map((s) => (
+              <ScopeOption
+                key={s.value}
+                item={s}
+                selected={scope === s.value}
+                onSelect={() => setScope(s.value)}
+              />
+            ))}
+          </View>
 
           {/* Accessibility level */}
           <Text
@@ -123,6 +125,7 @@ export default function WriteReview() {
             multiline
             numberOfLines={4}
             textAlignVertical="top"
+            accessibilityLabel="Your comment"
           />
 
           <Button
@@ -200,8 +203,8 @@ function LevelCard({
       }}
       onPress={onSelect}
       accessibilityRole="button"
-      accessibilityLabel={`${item.label.replace('\n', ' ')}`}
-      accessibilityState={{ selected: selected }}
+      accessibilityLabel={item.label.replace('\n', ' ')}
+      accessibilityState={{ selected }}
     >
       <Text variant="label" color={item.color} semiBold style={styles.levelLabel}>
         {item.label}
