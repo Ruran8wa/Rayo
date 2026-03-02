@@ -13,8 +13,10 @@ import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-na
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "@components/ui/button";
 import { Text } from "@components/ui/text";
-import { BorderRadius, Colors, Shadow, Spacing } from "@constants/theme";
+import { BorderRadius, Colors, FontFamily, FontSize, Shadow, Spacing } from "@constants/theme";
 import type { AccessibilityLevel } from "@/types";
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type Scope = "building" | "floor" | "service";
 
@@ -137,8 +139,6 @@ export default function WriteReview() {
   );
 }
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 function ScopeOption({
   item,
   selected,
@@ -154,12 +154,14 @@ function ScopeOption({
     <AnimatedPressable
       style={[styles.scopeOption, selected && styles.scopeSelected, animStyle]}
       onPressIn={() => {
-        scale.value = withSpring(0.97);
+        scale.value = withSpring(0.97, { damping: 15 });
       }}
       onPressOut={() => {
-        scale.value = withSpring(1);
+        scale.value = withSpring(1, { damping: 15 });
       }}
       onPress={onSelect}
+      accessibilityRole="radio"
+      accessibilityLabel={`${item.label}: ${item.sub}${selected ? ', selected' : ''}`}
     >
       <View style={styles.scopeInfo}>
         <Text variant="bodySm" bold>{item.label}</Text>
@@ -190,12 +192,14 @@ function LevelCard({
         animStyle,
       ]}
       onPressIn={() => {
-        scale.value = withSpring(0.95);
+        scale.value = withSpring(0.95, { damping: 15 });
       }}
       onPressOut={() => {
-        scale.value = withSpring(1);
+        scale.value = withSpring(1, { damping: 15 });
       }}
       onPress={onSelect}
+      accessibilityRole="button"
+      accessibilityLabel={`${item.label.replace('\n', ' ')}${selected ? ', selected' : ''}`}
     >
       <Text variant="label" color={item.color} semiBold style={styles.levelLabel}>
         {item.label}
@@ -255,6 +259,9 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     padding: Spacing.base,
     minHeight: 120,
+    fontFamily: FontFamily.body,
+    fontSize: FontSize.body,
+    color: Colors.textPrimary,
   },
   submitBtn: { marginTop: Spacing.xl },
 });
