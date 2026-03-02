@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import Animated, {
+  SharedValue,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -132,7 +133,7 @@ function DotIndicator({
   scrollX,
 }: {
   index: number;
-  scrollX: Animated.SharedValue<number>;
+  scrollX: SharedValue<number>;
 }) {
   const style = useAnimatedStyle(() => {
     const active = Math.round(scrollX.value / W) === index;
@@ -162,7 +163,7 @@ function LastSlideActions({
   onCreateAccount,
   onGuest,
 }: {
-  scrollX: Animated.SharedValue<number>;
+  scrollX: SharedValue<number>;
   onContinue: () => void;
   onCreateAccount: () => void;
   onGuest: () => void;

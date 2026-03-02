@@ -1,6 +1,6 @@
 import React from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
-import Animated, { useAnimatedStyle } from "react-native-reanimated";
+import Animated, { SharedValue, useAnimatedStyle } from "react-native-reanimated";
 import { Colors, Spacing } from "@constants/theme";
 import { Text } from "@components/ui/text";
 
@@ -10,7 +10,7 @@ interface Props {
   index: number;
   title: string;
   subtitle: string;
-  scrollX: Animated.SharedValue<number>;
+  scrollX: SharedValue<number>;
   children?: React.ReactNode; // illustration slot
 }
 
