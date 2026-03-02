@@ -1,4 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
+import {
+  DMSerifDisplay_400Regular,
+  useFonts as useDMSerif,
+} from "@expo-google-fonts/dm-serif-display";
+import {
+  Inter_400Regular,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  useFonts as useInter,
+} from "@expo-google-fonts/inter";
 import { useAuth } from "@contexts/AuthContext";
 import { Redirect } from "expo-router";
 import { useEffect, useState } from "react";
@@ -60,7 +70,11 @@ function RadarRing({ delay }: { delay: number }) {
 }
 
 export default function Index() {
-  const { loading } = useAuth();
+  const [dmSerifLoaded] = useDMSerif({ DMSerifDisplay_400Regular });
+  const [interLoaded] = useInter({ Inter_400Regular, Inter_600SemiBold, Inter_700Bold });
+  const fontsReady = dmSerifLoaded && interLoaded;
+
+  const { loading: authLoading } = useAuth();
   const [hasOnboarded, setHasOnboarded] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -69,7 +83,9 @@ export default function Index() {
     });
   }, []);
 
-  if (!loading && hasOnboarded !== null) {
+  const ready = fontsReady && !authLoading && hasOnboarded !== null;
+
+  if (ready) {
     if (!hasOnboarded) return <Redirect href="/onboarding" />;
     return <Redirect href="/(tabs)" />;
   }
@@ -85,7 +101,6 @@ export default function Index() {
           <Ionicons name="location-sharp" size={34} color={Colors.white} />
         </View>
         <RNText style={styles.brand}>rayo</RNText>
-        <RNText style={styles.tagline}>Every space, made clear.</RNText>
       </View>
 
       <View style={styles.dotsRow}>
@@ -133,12 +148,6 @@ const styles = StyleSheet.create({
     color: Colors.white,
     letterSpacing: 1,
     marginBottom: 6,
-  },
-  tagline: {
-    fontFamily: FontFamily.body,
-    fontSize: 14,
-    color: Colors.white + "99",
-    letterSpacing: 0.2,
   },
   dotsRow: {
     position: "absolute",

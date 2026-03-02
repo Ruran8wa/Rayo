@@ -1,32 +1,22 @@
 import "react-native-gesture-handler";
 import "react-native-reanimated";
 
-import {
-  DMSerifDisplay_400Regular,
-  useFonts as useDMSerif,
-} from "@expo-google-fonts/dm-serif-display";
-import {
-  Inter_400Regular,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  useFonts as useInter,
-} from "@expo-google-fonts/inter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { AuthProvider } from "@/contexts";
 
-SplashScreen.preventAutoHideAsync();
+// Hide native splash immediately — our JS loading screen in index.tsx takes over
+SplashScreen.hideAsync();
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 2,
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 60 * 5,
     },
   },
 });
@@ -36,24 +26,6 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  const [dmSerifLoaded, dmSerifError] = useDMSerif({ DMSerifDisplay_400Regular });
-  const [interLoaded, interError] = useInter({
-    Inter_400Regular,
-    Inter_600SemiBold,
-    Inter_700Bold,
-  });
-
-  const fontsLoaded = dmSerifLoaded && interLoaded;
-  const fontsError = dmSerifError || interError;
-
-  useEffect(() => {
-    if (fontsLoaded || fontsError) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontsError]);
-
-  if (!fontsLoaded && !fontsError) return null;
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
