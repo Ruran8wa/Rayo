@@ -1,16 +1,16 @@
-import Mapbox from "@rnmapbox/maps";
 import React from "react";
-import type { BuildingsGeoJSON } from "@/types";
-import { Colors } from "@constants/theme";
+import { StyleSheet, View } from "react-native";
+import { Marker } from "react-native-maps";
+import { Text } from "@components/ui/text";
+import { BorderRadius, Colors, Spacing } from "@constants/theme";
+import type { AccessibilityLevel, BuildingsGeoJSON } from "@/types";
 
 interface Props {
   geojson: BuildingsGeoJSON;
   onPinPress: (buildingId: string) => void;
 }
 
-// PIN_COLORS documents the values used in the SymbolLayer GL expressions below.
-// Mapbox GL expressions evaluate in native code and cannot reference JS objects directly.
-const PIN_COLORS = {
+const LEVEL_COLOR: Record<AccessibilityLevel, string> = {
   fully: Colors.fullyAccessible,
   partial: Colors.partiallyAccessible,
   none: Colors.notAccessible,
@@ -18,42 +18,40 @@ const PIN_COLORS = {
 
 export function BuildingPins({ geojson, onPinPress }: Props) {
   return (
-    <Mapbox.ShapeSource
-      id="buildings"
-      shape={geojson}
-      onPress={(e) => {
-        const feature = e.features[0];
-        if (feature?.properties?.id) {
-          onPinPress(feature.properties.id);
-        }
-      }}
-    >
-      <Mapbox.SymbolLayer
-        id="building-labels"
-        style={{
-          textField: ["get", "name"],
-          textSize: 12,
-          textColor: [
-            "match",
-            ["get", "accessibility_level"],
-            "fully", Colors.fullyAccessible,
-            "partial", Colors.partiallyAccessible,
-            Colors.notAccessible,
-          ],
-          textHaloColor: Colors.surface,
-          textHaloWidth: 2,
-          textOffset: [0, 1.5],
-          iconImage: "marker",
-          iconSize: 1,
-          iconColor: [
-            "match",
-            ["get", "accessibility_level"],
-            "fully", Colors.fullyAccessible,
-            "partial", Colors.partiallyAccessible,
-            Colors.notAccessible,
-          ],
-        }}
-      />
-    </Mapbox.ShapeSource>
+    <>
+      {geojson.features.map((feature) => {
+        const [lng, lat] = feature.geometry.coordinates;
+        const { id, name, accessibility_level } = feature.properties;
+        const color = LEVEL_COLOR[accessibility_level] ?? Colors.notAccessible;
+
+        return (
+          <Marker
+            key={id}
+            coordinate={{ latitude: lat, longitude: lng }}
+            onPress={() => onPinPress(id)}
+            tracksViewChanges={false}
+            anchor={{ x: 0.5, y: 1 }}
+          >
+            <View style={[styles.pin, { backgroundColor: color }]}>
+              <Text style={styles.label} numberOfLines={1}>{name}</Text>
+            </View>
+          </Marker>
+        );
+      })}
+    </>
   );
 }
+
+const styles = StyleSheet.create({
+  pin: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.pill,
+    maxWidth: 140,
+  },
+  label: {
+    fontSize: 11,
+    color: Colors.white,
+    fontWeight: "600",
+  },
+});

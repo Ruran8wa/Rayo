@@ -1,7 +1,6 @@
-import Mapbox from "@rnmapbox/maps";
 import { useQuery } from "@tanstack/react-query";
-import ENV from "@config/env";
 import { StyleSheet, View } from "react-native";
+import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { buildingsService } from "@services/api/buildings.service";
 import { useMapStore } from "@stores/map.store";
@@ -11,9 +10,14 @@ import { BuildingPins } from "@components/map/building-pins";
 import { BuildingPreviewSheet } from "@components/map/building-preview-sheet";
 import { Spacing } from "@constants/theme";
 
-Mapbox.setAccessToken(ENV.mapboxToken);
-
 const KIGALI_BOUNDS = { south: -2.0, west: 29.9, north: -1.8, east: 30.2 } as const;
+
+const INITIAL_REGION = {
+  latitude: -1.9441,
+  longitude: 30.0619,
+  latitudeDelta: 0.05,
+  longitudeDelta: 0.03,
+};
 
 export default function MapTab() {
   const insets = useSafeAreaInsets();
@@ -35,22 +39,19 @@ export default function MapTab() {
 
   return (
     <View style={styles.container}>
-      <Mapbox.MapView
+      <MapView
         style={styles.map}
-        styleURL={Mapbox.StyleURL.Light}
-        compassEnabled={false}
-        logoEnabled={false}
-        attributionEnabled={false}
+        provider={PROVIDER_GOOGLE}
+        initialRegion={INITIAL_REGION}
+        showsUserLocation={false}
+        showsMyLocationButton={false}
+        showsCompass={false}
+        toolbarEnabled={false}
       >
-        <Mapbox.Camera
-          zoomLevel={13}
-          centerCoordinate={[30.0619, -1.9441]}
-          animationMode="none"
-        />
         {geojson && (
           <BuildingPins geojson={geojson} onPinPress={handlePinPress} />
         )}
-      </Mapbox.MapView>
+      </MapView>
 
       <View style={[styles.overlay, { paddingTop: insets.top + Spacing.sm }]}>
         <MapSearchBar />

@@ -11,6 +11,9 @@ module.exports = {
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
+      config: {
+        googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
+      },
     },
     android: {
       adaptiveIcon: {
@@ -21,6 +24,11 @@ module.exports = {
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
+      config: {
+        googleMaps: {
+          apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
+        },
+      },
     },
     web: {
       output: "static",
@@ -28,15 +36,6 @@ module.exports = {
     },
     plugins: [
       "expo-router",
-      [
-        "@rnmapbox/maps",
-        {
-          // Secret download token (sk.*) required for Android native builds.
-          // Create one at mapbox.com → Account → Tokens with DOWNLOADS:READ scope.
-          // Set MAPBOX_DOWNLOAD_TOKEN in your .env (never commit this value).
-          RNMapboxMapsDownloadToken: process.env.MAPBOX_DOWNLOAD_TOKEN ?? "",
-        },
-      ],
       [
         "expo-splash-screen",
         {
