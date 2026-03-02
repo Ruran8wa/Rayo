@@ -2,12 +2,12 @@ const ENV = {
   dev: {
     apiUrl: "https://rayo-backend-hzh7.onrender.com/api",
     apiTimeout: 30000,
-    mapboxToken: process.env.EXPO_PUBLIC_MAPBOX_TOKEN ?? "",
+    mapboxToken: process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? "",
   },
   prod: {
     apiUrl: "https://rayo-backend-hzh7.onrender.com/api",
     apiTimeout: 30000,
-    mapboxToken: process.env.EXPO_PUBLIC_MAPBOX_TOKEN ?? "",
+    mapboxToken: process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? "",
   },
 };
 
