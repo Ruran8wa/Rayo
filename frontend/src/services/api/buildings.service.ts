@@ -17,8 +17,12 @@ export const buildingsService = {
     return response.data;
   },
 
-  async search(query: string): Promise<Building[]> {
-    const response = await apiClient.get<Building[]>("/buildings/search", { q: query });
+  async search(query: string, filters?: string[]): Promise<Building[]> {
+    const params: Record<string, unknown> = { q: query };
+    if (filters && filters.length > 0) {
+      params.filters = filters.join(",");
+    }
+    const response = await apiClient.get<Building[]>("/buildings/search", params);
     return response.data;
   },
 

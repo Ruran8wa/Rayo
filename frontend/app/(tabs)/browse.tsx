@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
-import { ActivityIndicator, FlatList, StyleSheet, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BuildingCard } from "@components/buildings/building-card";
 import { Chip } from "@components/ui/chip";
@@ -15,9 +15,9 @@ export default function Browse() {
   const { browseSearchQuery, setBrowseSearch, activeBrowseFilters, toggleBrowseFilter } =
     useFilterStore();
 
-  const { data: buildings, isLoading } = useQuery({
-    queryKey: ["buildings-search", browseSearchQuery],
-    queryFn: () => buildingsService.search(browseSearchQuery),
+  const { data: buildings, isFetching } = useQuery({
+    queryKey: ["buildings-search", browseSearchQuery, activeBrowseFilters],
+    queryFn: () => buildingsService.search(browseSearchQuery, activeBrowseFilters),
     staleTime: 1000 * 60,
   });
 
@@ -25,7 +25,7 @@ export default function Browse() {
     <SafeAreaView style={styles.container}>
       <FlatList
         data={buildings ?? []}
-        keyExtractor={(b) => b.id}
+        keyExtractor={(b) => String(b.id)}
         renderItem={({ item }) => <BuildingCard building={item} />}
         contentContainerStyle={styles.list}
         ListHeaderComponent={
@@ -43,25 +43,25 @@ export default function Browse() {
               />
             </View>
             {/* Filters */}
-            <FlatList
-              data={BROWSE_FILTERS as unknown as BrowseFilter[]}
-              keyExtractor={(f) => f}
-              renderItem={({ item }) => (
-                <Chip
-                  label={item}
-                  active={activeBrowseFilters.includes(item)}
-                  onPress={() => toggleBrowseFilter(item)}
-                />
-              )}
+            <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.chips}
               style={styles.chipsRow}
-            />
+            >
+              {(BROWSE_FILTERS as unknown as BrowseFilter[]).map((item) => (
+                <Chip
+                  key={item}
+                  label={item}
+                  active={activeBrowseFilters.includes(item)}
+                  onPress={() => toggleBrowseFilter(item)}
+                />
+              ))}
+            </ScrollView>
           </>
         }
         ListEmptyComponent={
-          isLoading ? (
+          isFetching ? (
             <ActivityIndicator color={Colors.primary} style={styles.loader} />
           ) : null
         }

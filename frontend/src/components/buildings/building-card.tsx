@@ -34,11 +34,9 @@ export function BuildingCard({ building }: Props) {
       <View style={styles.info}>
         <View style={styles.titleRow}>
           <Text variant="bodySm" bold style={styles.name}>{building.name}</Text>
-          <View style={styles.statusBadge}>
-            <Text variant="caption" color={building.is_open ? Colors.open : Colors.closed}>
-              {building.is_open ? "Open" : "Closed"}
-            </Text>
-          </View>
+          <Text variant="caption" color={building.is_open ? Colors.open : Colors.closed}>
+            {building.is_open ? "Open" : "Closed"}
+          </Text>
         </View>
         <Text variant="caption" color={Colors.textSecondary}>
           {building.address} · {building.floor_count} floors
@@ -87,7 +85,6 @@ const styles = StyleSheet.create({
   info: { flex: 1 },
   titleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   name: { flex: 1, marginRight: Spacing.sm },
-  statusBadge: {},
   bottomRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: Spacing.sm },
   features: { flexDirection: "row", gap: Spacing.xs },
   featureTag: {
