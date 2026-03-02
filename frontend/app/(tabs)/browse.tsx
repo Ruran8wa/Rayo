@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import { ActivityIndicator, FlatList, ScrollView, StyleSheet, TextInput, View } from "react-native";
@@ -9,29 +10,40 @@ import { BorderRadius, Colors, FontSize, Spacing } from "@constants/theme";
 import { buildingsService } from "@services/api/buildings.service";
 import { BROWSE_FILTERS, useFilterStore } from "@stores/filter.store";
 import type { BrowseFilter } from "@stores/filter.store";
-import { Ionicons } from "@expo/vector-icons";
 
 export default function Browse() {
   const { browseSearchQuery, setBrowseSearch, activeBrowseFilters, toggleBrowseFilter } =
     useFilterStore();
 
-  const { data: buildings, isFetching } = useQuery({
+  // Default: list all buildings (via GeoJSON). When searching: use search endpoint.
+  const { data: allBuildings, isFetching: loadingAll } = useQuery({
+    queryKey: ["buildings-all"],
+    queryFn: () => buildingsService.listAll(),
+    enabled: !browseSearchQuery,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: searchResults, isFetching: loadingSearch } = useQuery({
     queryKey: ["buildings-search", browseSearchQuery],
     queryFn: () => buildingsService.search(browseSearchQuery),
+    enabled: !!browseSearchQuery,
     staleTime: 1000 * 60,
   });
+
+  const buildings = browseSearchQuery ? (searchResults ?? []) : (allBuildings ?? []);
+  const isFetching = browseSearchQuery ? loadingSearch : loadingAll;
 
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
-        data={buildings ?? []}
+        data={buildings}
         keyExtractor={(b) => String(b.id)}
         renderItem={({ item }) => <BuildingCard building={item} />}
         contentContainerStyle={styles.list}
         ListHeaderComponent={
           <>
             <Text variant="h1" style={styles.heading}>Browse Places</Text>
-            {/* Search */}
+
             <View style={styles.searchBar}>
               <Ionicons name="search" size={18} color={Colors.textSecondary} />
               <TextInput
@@ -40,9 +52,18 @@ export default function Browse() {
                 onChangeText={setBrowseSearch}
                 placeholder="Search buildings, services..."
                 placeholderTextColor={Colors.textSecondary}
+                returnKeyType="search"
               />
+              {browseSearchQuery.length > 0 && (
+                <Ionicons
+                  name="close-circle"
+                  size={18}
+                  color={Colors.textSecondary}
+                  onPress={() => setBrowseSearch("")}
+                />
+              )}
             </View>
-            {/* Filters */}
+
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -63,6 +84,13 @@ export default function Browse() {
         ListEmptyComponent={
           isFetching ? (
             <ActivityIndicator color={Colors.primary} style={styles.loader} />
+          ) : browseSearchQuery ? (
+            <View style={styles.empty}>
+              <Ionicons name="search-outline" size={32} color={Colors.border} />
+              <Text variant="bodySm" color={Colors.textSecondary} style={styles.emptyText}>
+                No buildings found for "{browseSearchQuery}"
+              </Text>
+            </View>
           ) : null
         }
       />
@@ -91,4 +119,11 @@ const styles = StyleSheet.create({
   chips: { paddingHorizontal: Spacing.xl },
   list: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xl },
   loader: { marginTop: Spacing.xxl },
+  empty: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    paddingTop: Spacing.xxxl,
+  },
+  emptyText: { textAlign: "center" },
 });

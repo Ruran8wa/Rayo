@@ -9,9 +9,14 @@ import type { Building } from "@/types";
 
 const CATEGORY_ICONS: Record<string, string> = {
   Health: "medical",
+  Hospital: "medical",
+  Clinic: "medical",
   Government: "business",
   Bank: "card",
   Education: "school",
+  School: "school",
+  University: "school",
+  Commercial: "storefront",
   default: "location",
 };
 
@@ -23,24 +28,39 @@ export function BuildingCard({ building }: Props) {
   const router = useRouter();
   const icon = CATEGORY_ICONS[building.category] ?? CATEGORY_ICONS.default;
 
+  const subtitle = [
+    building.address,
+    building.floor_count > 0 ? `${building.floor_count} floor${building.floor_count !== 1 ? "s" : ""}` : "",
+  ]
+    .filter(Boolean)
+    .join("  ·  ");
+
   return (
     <Pressable
       style={styles.card}
       onPress={() => router.push(`/building/${building.id}`)}
     >
-      <View style={styles.icon}>
+      <View style={styles.iconBox}>
         <Ionicons name={icon as any} size={22} color={Colors.primary} />
       </View>
       <View style={styles.info}>
         <View style={styles.titleRow}>
-          <Text variant="bodySm" bold style={styles.name}>{building.name}</Text>
-          <Text variant="caption" color={building.is_open ? Colors.open : Colors.closed}>
-            {building.is_open ? "Open" : "Closed"}
+          <Text variant="bodySm" semiBold style={styles.name} numberOfLines={1}>
+            {building.name}
           </Text>
+          {building.is_open !== undefined && (
+            <Text variant="caption" color={building.is_open ? Colors.open : Colors.closed}>
+              {building.is_open ? "Open" : "Closed"}
+            </Text>
+          )}
         </View>
-        <Text variant="caption" color={Colors.textSecondary}>
-          {building.address} · {building.floor_count} floors
-        </Text>
+
+        {subtitle.length > 0 && (
+          <Text variant="caption" color={Colors.textSecondary} numberOfLines={1}>
+            {subtitle}
+          </Text>
+        )}
+
         <View style={styles.bottomRow}>
           <View style={styles.features}>
             {(building.features ?? []).slice(0, 2).map((f) => (
@@ -51,7 +71,7 @@ export function BuildingCard({ building }: Props) {
           </View>
           <View style={styles.right}>
             <AccessibilityBadge level={building.accessibility_level} />
-            {building.distance_km && (
+            {building.distance_km != null && (
               <Text variant="caption" color={Colors.textSecondary}>
                 {building.distance_km} km
               </Text>
@@ -73,7 +93,7 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     ...Shadow.card,
   },
-  icon: {
+  iconBox: {
     width: 48,
     height: 48,
     borderRadius: BorderRadius.md,
@@ -83,9 +103,19 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   info: { flex: 1 },
-  titleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  titleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 2,
+  },
   name: { flex: 1, marginRight: Spacing.sm },
-  bottomRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: Spacing.sm },
+  bottomRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: Spacing.sm,
+  },
   features: { flexDirection: "row", gap: Spacing.xs },
   featureTag: {
     backgroundColor: Colors.background,

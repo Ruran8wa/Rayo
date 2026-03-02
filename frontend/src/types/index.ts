@@ -60,7 +60,7 @@ export interface Building {
   longitude: number;
   category: string;      // "Health", "Government", "Bank", etc.
   accessibility_level: AccessibilityLevel;
-  is_open: boolean;
+  is_open?: boolean;     // not provided by API — omit when unknown
   floor_count: number;
   distance_km?: number;  // set client-side when user location is known
   features: string[];    // top-level features
