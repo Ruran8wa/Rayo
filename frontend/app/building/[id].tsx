@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   back: { padding: Spacing.sm, marginLeft: -Spacing.sm, marginBottom: Spacing.base },
   name: { marginBottom: Spacing.xs },
   address: { marginBottom: Spacing.base },
-  badges: { flexDirection: "row", gap: Spacing.sm, flexWrap: "wrap" },
+  badges: { flexDirection: "row", gap: Spacing.sm, flexWrap: "wrap", marginTop: Spacing.sm },
   badge: {
     borderWidth: 1,
     borderColor: Colors.white + "40",
