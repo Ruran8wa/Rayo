@@ -27,10 +27,6 @@ const { width: W } = Dimensions.get("window");
 
 const SLIDES = [
   {
-    title: "Every space speaks louder here",
-    subtitle: "Rayo helps you navigate the world around you — on your terms.",
-  },
-  {
     title: "Find accessible spaces near you",
     subtitle: "Discover buildings that are fully, partially, or not accessible — all in one map.",
   },
@@ -100,7 +96,7 @@ export default function Onboarding() {
             scrollX={scrollX}
           >
             <Ionicons
-              name={(["location", "map", "layers", "star"] as const)[i]}
+              name={(["map", "layers", "star"] as const)[i]}
               size={64}
               color={Colors.white}
             />
