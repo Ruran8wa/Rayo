@@ -1,19 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { buildingsService } from "@services/api/buildings.service";
+import { placesService, type PlaceDetail, type PlacePrediction } from "@services/api/places.service";
 import { useMapStore } from "@stores/map.store";
 import { useFilterStore } from "@stores/filter.store";
 import { MapSearchBar } from "@components/map/map-search-bar";
 import { CategoryChipRow } from "@components/map/category-chip-row";
 import { BuildingPins } from "@components/map/building-pins";
 import { BuildingPreviewSheet } from "@components/map/building-preview-sheet";
-import { AccessibilityBadge } from "@components/ui/accessibility-badge";
+import { UnverifiedPlaceSheet } from "@components/map/unverified-place-sheet";
 import { Text } from "@components/ui/text";
 import { BorderRadius, Colors, Shadow, Spacing } from "@constants/theme";
-import type { Building } from "@/types";
 
 const KIGALI_BOUNDS = { south: -2.0, west: 29.9, north: -1.8, east: 30.2 } as const;
 
@@ -31,47 +31,98 @@ export default function MapTab() {
   const { mapSearchQuery, setMapSearch } = useFilterStore();
 
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
+  const [predictionsLoading, setPredictionsLoading] = useState(false);
+  const [unverifiedPlace, setUnverifiedPlace] = useState<PlaceDetail | null>(null);
+  const [selectingPlace, setSelectingPlace] = useState(false);
+
+  // Debounce search input
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(mapSearchQuery.trim()), 400);
     return () => clearTimeout(t);
   }, [mapSearchQuery]);
+
+  // Fetch Google Places autocomplete predictions
+  useEffect(() => {
+    if (debouncedQuery.length < 2) {
+      setPredictions([]);
+      return;
+    }
+    setPredictionsLoading(true);
+    placesService
+      .autocomplete(debouncedQuery)
+      .then(setPredictions)
+      .catch(() => setPredictions([]))
+      .finally(() => setPredictionsLoading(false));
+  }, [debouncedQuery]);
 
   const { data: geojson } = useQuery({
     queryKey: ["buildings-geojson"],
     queryFn: () => buildingsService.getGeoJSON(KIGALI_BOUNDS),
   });
 
-  const { data: searchResults } = useQuery({
-    queryKey: ["map-search", debouncedQuery],
-    queryFn: () => buildingsService.search(debouncedQuery),
-    enabled: debouncedQuery.length > 1,
-  });
-
   const handlePinPress = async (id: string) => {
     try {
       const building = await buildingsService.getById(id);
       setSelectedBuilding(building);
+      setUnverifiedPlace(null);
     } catch (error) {
       console.error("Failed to load building:", error);
     }
   };
 
-  const handleResultPress = (building: Building) => {
-    setSelectedBuilding(building);
+  const handlePredictionPress = async (prediction: PlacePrediction) => {
     setMapSearch("");
-    mapRef.current?.animateToRegion(
-      {
-        latitude: building.latitude,
-        longitude: building.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      },
-      500
-    );
+    setPredictions([]);
+    setSelectingPlace(true);
+
+    try {
+      // 1. Get coordinates from Google
+      const detail = await placesService.getDetails(prediction.placeId);
+      if (!detail) return;
+
+      // 2. Pan the map to the place
+      mapRef.current?.animateToRegion(
+        {
+          latitude: detail.latitude,
+          longitude: detail.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        },
+        500
+      );
+
+      // 3. Check if it exists in our database
+      const dbResults = await buildingsService.search(prediction.name);
+      const dbMatch = dbResults.find((b) => {
+        const latClose = Math.abs(b.latitude - detail.latitude) < 0.015;
+        const lngClose = Math.abs(b.longitude - detail.longitude) < 0.015;
+        return latClose && lngClose;
+      });
+
+      if (dbMatch) {
+        // Known building — show full accessibility data
+        const full = await buildingsService.getById(dbMatch.id);
+        setSelectedBuilding(full);
+        setUnverifiedPlace(null);
+      } else {
+        // Not in our system — show gray unverified pin + sheet
+        clearSelection();
+        setUnverifiedPlace(detail);
+      }
+    } catch {
+      // silent
+    } finally {
+      setSelectingPlace(false);
+    }
   };
 
-  const showResults =
-    debouncedQuery.length > 1 && searchResults && searchResults.length > 0;
+  const handleClearUnverified = () => {
+    setUnverifiedPlace(null);
+    clearSelection();
+  };
+
+  const showPredictions = predictions.length > 0 && !selectingPlace;
 
   return (
     <View style={styles.container}>
@@ -88,46 +139,80 @@ export default function MapTab() {
         {geojson?.features?.length && (
           <BuildingPins geojson={geojson} onPinPress={handlePinPress} />
         )}
+
+        {/* Gray pin for unverified Google place */}
+        {unverifiedPlace && (
+          <Marker
+            coordinate={{
+              latitude: unverifiedPlace.latitude,
+              longitude: unverifiedPlace.longitude,
+            }}
+            tracksViewChanges={false}
+            anchor={{ x: 0.5, y: 1 }}
+            onPress={() => {}} // keep sheet open
+          >
+            <View style={styles.grayPin}>
+              <Text style={styles.grayPinLabel} numberOfLines={1}>
+                {unverifiedPlace.name}
+              </Text>
+            </View>
+          </Marker>
+        )}
       </MapView>
 
+      {/* Overlay: search bar, chips, results */}
       <View style={[styles.overlay, { paddingTop: insets.top + Spacing.sm }]}>
         <MapSearchBar />
         <CategoryChipRow />
-        {showResults && (
+
+        {/* Predictions dropdown */}
+        {showPredictions && (
           <View style={styles.resultsCard}>
             <ScrollView
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
               style={styles.resultsList}
             >
-              {searchResults.map((building, i) => (
+              {predictions.map((p, i) => (
                 <Pressable
-                  key={building.id}
+                  key={p.placeId}
                   style={[
                     styles.resultRow,
-                    i < searchResults.length - 1 && styles.resultBorder,
+                    i < predictions.length - 1 && styles.resultBorder,
                   ]}
-                  onPress={() => handleResultPress(building)}
+                  onPress={() => handlePredictionPress(p)}
                 >
+                  <View style={styles.pinIcon}>
+                    <Text style={styles.pinIconText}>📍</Text>
+                  </View>
                   <View style={styles.resultInfo}>
-                    <Text variant="bodySm" semiBold numberOfLines={1}>
-                      {building.name}
-                    </Text>
+                    <Text variant="bodySm" semiBold numberOfLines={1}>{p.name}</Text>
                     <Text variant="caption" color={Colors.textSecondary} numberOfLines={1}>
-                      {building.address}
+                      {p.address}
                     </Text>
                   </View>
-                  <AccessibilityBadge level={building.accessibility_level} />
                 </Pressable>
               ))}
             </ScrollView>
           </View>
         )}
+
+        {/* Loading spinner while selecting */}
+        {predictionsLoading && debouncedQuery.length > 1 && predictions.length === 0 && (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator size="small" color={Colors.primary} />
+          </View>
+        )}
       </View>
 
+      {/* Bottom sheets — only one shows at a time */}
       <BuildingPreviewSheet
         building={previewBuilding}
         onClose={clearSelection}
+      />
+      <UnverifiedPlaceSheet
+        place={unverifiedPlace}
+        onClose={handleClearUnverified}
       />
     </View>
   );
@@ -165,8 +250,37 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
+  pinIcon: {
+    width: 28,
+    height: 28,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pinIconText: {
+    fontSize: 16,
+  },
   resultInfo: {
     flex: 1,
     gap: 2,
+  },
+  loadingRow: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.base,
+    alignItems: "center",
+    ...Shadow.card,
+  },
+  // Gray unverified pin
+  grayPin: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.pill,
+    backgroundColor: "#9E9E9E",
+    maxWidth: 140,
+  },
+  grayPinLabel: {
+    fontSize: 11,
+    color: Colors.white,
+    fontWeight: "600",
   },
 });
