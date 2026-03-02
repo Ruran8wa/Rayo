@@ -58,7 +58,7 @@ export default function WriteReview() {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          <Pressable onPress={() => router.back()} style={styles.back}>
+          <Pressable onPress={() => router.back()} style={styles.back} accessibilityRole="button" accessibilityLabel="Go back">
             <Text variant="label" color={Colors.textSecondary}>← Back</Text>
           </Pressable>
 
@@ -161,7 +161,8 @@ function ScopeOption({
       }}
       onPress={onSelect}
       accessibilityRole="radio"
-      accessibilityLabel={`${item.label}: ${item.sub}${selected ? ', selected' : ''}`}
+      accessibilityLabel={`${item.label}: ${item.sub}`}
+      accessibilityState={{ checked: selected }}
     >
       <View style={styles.scopeInfo}>
         <Text variant="bodySm" bold>{item.label}</Text>
@@ -199,7 +200,8 @@ function LevelCard({
       }}
       onPress={onSelect}
       accessibilityRole="button"
-      accessibilityLabel={`${item.label.replace('\n', ' ')}${selected ? ', selected' : ''}`}
+      accessibilityLabel={`${item.label.replace('\n', ' ')}`}
+      accessibilityState={{ selected: selected }}
     >
       <Text variant="label" color={item.color} semiBold style={styles.levelLabel}>
         {item.label}
