@@ -8,21 +8,13 @@ export const buildingsService = {
     north: number;
     east: number;
   }): Promise<BuildingsGeoJSON> {
-    const response = await apiClient.get<BuildingsGeoJSON>("/buildings/geojson", {
-      south: bounds.south,
-      west: bounds.west,
-      north: bounds.north,
-      east: bounds.east,
-    });
+    const bbox = `${bounds.south},${bounds.west},${bounds.north},${bounds.east}`;
+    const response = await apiClient.get<BuildingsGeoJSON>("/buildings/geojson", { bbox });
     return response.data;
   },
 
-  async search(query: string, filters?: string[]): Promise<Building[]> {
-    const params: Record<string, unknown> = { q: query };
-    if (filters && filters.length > 0) {
-      params.filters = filters.join(",");
-    }
-    const response = await apiClient.get<Building[]>("/buildings/search", params);
+  async search(query: string): Promise<Building[]> {
+    const response = await apiClient.get<Building[]>("/buildings/search", { q: query });
     return response.data;
   },
 

@@ -1,33 +1,33 @@
-/**
- * API Service Example
- * Example service for user-related API calls
- */
-
-import type { User } from "../../types/index";
+import type { Building, UserPreferences } from "../../types/index";
 import { apiClient } from "./client";
 
 export const userService = {
-  /**
-   * Get current user profile
-   */
-  async getProfile(): Promise<User> {
-    const response = await apiClient.get<User>("/user/profile");
+  async getPreferences(): Promise<UserPreferences> {
+    const response = await apiClient.get<UserPreferences>("/users/preferences");
     return response.data;
   },
 
-  /**
-   * Update user profile
-   */
-  async updateProfile(data: Partial<User>): Promise<User> {
-    const response = await apiClient.put<User>("/user/profile", data);
+  async setPreferences(
+    disability_type: string,
+    preferences: Record<string, string | number | boolean>
+  ): Promise<UserPreferences> {
+    const response = await apiClient.post<UserPreferences>("/users/preferences", {
+      disability_type,
+      preferences,
+    });
     return response.data;
   },
 
-  /**
-   * Get user by ID
-   */
-  async getUserById(id: string): Promise<User> {
-    const response = await apiClient.get<User>(`/user/${id}`);
+  async getSavedPlaces(): Promise<Building[]> {
+    const response = await apiClient.get<Building[]>("/users/saved-places");
     return response.data;
+  },
+
+  async savePlace(buildingId: string): Promise<void> {
+    await apiClient.post("/users/saved-places", { buildingId });
+  },
+
+  async removePlace(id: string): Promise<void> {
+    await apiClient.delete(`/users/saved-places/${id}`);
   },
 };

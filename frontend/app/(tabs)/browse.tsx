@@ -16,8 +16,8 @@ export default function Browse() {
     useFilterStore();
 
   const { data: buildings, isFetching } = useQuery({
-    queryKey: ["buildings-search", browseSearchQuery, activeBrowseFilters],
-    queryFn: () => buildingsService.search(browseSearchQuery, activeBrowseFilters),
+    queryKey: ["buildings-search", browseSearchQuery],
+    queryFn: () => buildingsService.search(browseSearchQuery),
     staleTime: 1000 * 60,
   });
 

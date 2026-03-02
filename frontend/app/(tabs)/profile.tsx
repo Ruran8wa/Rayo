@@ -19,6 +19,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { Text } from "@components/ui/text";
 import { BorderRadius, Colors, Shadow, Spacing } from "@constants/theme";
 import { useAuth } from "@contexts/AuthContext";
+import { userService } from "@services/api/user.service";
 
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
@@ -127,11 +128,16 @@ export default function ProfileTab() {
             <Pressable
               key={opt.id}
               style={[styles.needRow, selectedNeeds.includes(opt.id) && styles.needRowActive]}
-              onPress={() =>
-                setSelectedNeeds((prev) =>
-                  prev.includes(opt.id) ? prev.filter((x) => x !== opt.id) : [...prev, opt.id]
-                )
-              }
+              onPress={() => {
+                const next = selectedNeeds.includes(opt.id)
+                  ? selectedNeeds.filter((x) => x !== opt.id)
+                  : [...selectedNeeds, opt.id];
+                setSelectedNeeds(next);
+                const primary = next[0];
+                if (primary) {
+                  userService.setPreferences(primary, {}).catch(() => {});
+                }
+              }}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: selectedNeeds.includes(opt.id) }}
               accessibilityLabel={opt.label}
