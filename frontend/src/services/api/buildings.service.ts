@@ -8,7 +8,8 @@ const KIGALI_BOUNDS = { south: -2.0, west: 29.9, north: -1.8, east: 30.2 } as co
 function mapAccessibilityClass(cls: string): AccessibilityLevel {
   if (cls === "high") return "fully";
   if (cls === "medium") return "partial";
-  return "none";
+  if (cls === "low") return "none";
+  return "unknown"; // not in database / unexpected value
 }
 
 function mapFeatures(b: Record<string, unknown>): string[] {

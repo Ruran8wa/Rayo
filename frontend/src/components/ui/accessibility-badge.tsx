@@ -7,9 +7,10 @@ import type { AccessibilityLevel } from "@/types";
 export type { AccessibilityLevel };  // re-export for backwards compatibility
 
 const CONFIG: Record<AccessibilityLevel, { label: string; color: string }> = {
-  fully: { label: "Fully", color: Colors.fullyAccessible },
+  fully:   { label: "Fully",   color: Colors.fullyAccessible },
   partial: { label: "Partial", color: Colors.partiallyAccessible },
-  none: { label: "None", color: Colors.notAccessible },
+  none:    { label: "None",    color: Colors.notAccessible },
+  unknown: { label: "Unknown", color: "#9E9E9E" },
 };
 
 interface Props {

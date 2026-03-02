@@ -11,9 +11,10 @@ interface Props {
 }
 
 const LEVEL_COLOR: Record<AccessibilityLevel, string> = {
-  fully: Colors.fullyAccessible,
+  fully:   Colors.fullyAccessible,
   partial: Colors.partiallyAccessible,
-  none: Colors.notAccessible,
+  none:    Colors.notAccessible,
+  unknown: "#9E9E9E",
 };
 
 export function BuildingPins({ geojson, onPinPress }: Props) {
@@ -24,7 +25,7 @@ export function BuildingPins({ geojson, onPinPress }: Props) {
       {geojson.features.map((feature) => {
         const [lng, lat] = feature.geometry.coordinates;
         const { id, name, accessibility_level } = feature.properties;
-        const color = LEVEL_COLOR[accessibility_level] ?? Colors.notAccessible;
+        const color = LEVEL_COLOR[accessibility_level] ?? LEVEL_COLOR.unknown;
 
         return (
           <Marker

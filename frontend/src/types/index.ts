@@ -32,7 +32,7 @@ export interface AuthTokens {
 }
 
 // Accessibility
-export type AccessibilityLevel = "fully" | "partial" | "none";
+export type AccessibilityLevel = "fully" | "partial" | "none" | "unknown";
 
 // Service (room/amenity within a floor)
 export interface Service {
