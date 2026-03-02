@@ -32,8 +32,11 @@ export default function ProfileTab() {
   const { user, signOut } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  // TODO: persist largeText preference via userService.updateProfile when endpoint is available
   const [largeText, setLargeText] = useState(false);
-  const [selectedNeeds, setSelectedNeeds] = useState<string[]>(["mobility"]);
+  const [selectedNeeds, setSelectedNeeds] = useState<string[]>(
+    user.disability_type ? [user.disability_type.toLowerCase()] : []
+  );
   const scrollY = useSharedValue(0);
 
   const scrollHandler = useAnimatedScrollHandler((e) => {
@@ -74,19 +77,20 @@ export default function ProfileTab() {
     );
   }
 
-  const initials = user.name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const initials =
+    (user.name ?? "")
+      .split(" ")
+      .map((n) => n[0] ?? "")
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "?";
 
   return (
     <View style={styles.container}>
       <AnimatedScrollView
         onScroll={scrollHandler}
         scrollEventThrottle={16}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, { paddingBottom: Spacing.huge + insets.bottom }]}
       >
         {/* Header card */}
         <Animated.View style={[styles.header, headerStyle, { paddingTop: insets.top + Spacing.xl }]}>
@@ -106,7 +110,13 @@ export default function ProfileTab() {
         </Animated.View>
 
         {/* Accessibility needs */}
-        <Section title="MY ACCESSIBILITY NEEDS" actionLabel="Edit" onAction={() => {}}>
+        <Section
+          title="MY ACCESSIBILITY NEEDS"
+          actionLabel="Edit"
+          onAction={() =>
+            Alert.alert("Accessibility Needs", "Tap each option below to toggle your needs.")
+          }
+        >
           {DISABILITY_OPTIONS.map((opt) => (
             <Pressable
               key={opt.id}
