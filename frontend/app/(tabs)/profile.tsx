@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -34,9 +34,13 @@ export default function ProfileTab() {
   const insets = useSafeAreaInsets();
   // TODO: persist largeText preference via userService.updateProfile when endpoint is available
   const [largeText, setLargeText] = useState(false);
-  const [selectedNeeds, setSelectedNeeds] = useState<string[]>(
-    user.disability_type ? [user.disability_type.toLowerCase()] : []
-  );
+  const [selectedNeeds, setSelectedNeeds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (user?.disability_type) {
+      setSelectedNeeds([user.disability_type.toLowerCase()]);
+    }
+  }, [user?.disability_type]);
   const scrollY = useSharedValue(0);
 
   const scrollHandler = useAnimatedScrollHandler((e) => {
