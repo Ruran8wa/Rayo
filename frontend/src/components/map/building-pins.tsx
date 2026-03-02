@@ -17,6 +17,8 @@ const LEVEL_COLOR: Record<AccessibilityLevel, string> = {
 };
 
 export function BuildingPins({ geojson, onPinPress }: Props) {
+  if (!geojson.features?.length) return null;
+
   return (
     <>
       {geojson.features.map((feature) => {

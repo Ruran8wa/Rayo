@@ -85,7 +85,7 @@ export default function MapTab() {
         showsCompass={false}
         toolbarEnabled={false}
       >
-        {geojson && (
+        {geojson?.features?.length && (
           <BuildingPins geojson={geojson} onPinPress={handlePinPress} />
         )}
       </MapView>
