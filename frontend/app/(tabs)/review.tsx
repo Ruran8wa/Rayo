@@ -27,6 +27,8 @@ export default function ReviewTab() {
   const router = useRouter();
   const { user } = useAuth();
 
+  const nextBadge = MOCK_BADGES.find((b) => !b.earned);
+
   const handleWriteReview = () => {
     if (!user) {
       router.push("/(auth)/sign-in");
@@ -53,19 +55,23 @@ export default function ReviewTab() {
         <BadgeStrip badges={MOCK_BADGES} onSeeAll={() => {}} />
 
         {/* Next badge progress */}
-        <View style={styles.nextBadge}>
-          <Text variant="label" semiBold color={Colors.textSecondary}>NEXT BADGE</Text>
-          <View style={styles.nextBadgeCard}>
-            <Text variant="bodySm" bold>Civic Guide</Text>
-            <Text variant="caption" color={Colors.textSecondary}>
-              Review 3 more government buildings
-            </Text>
-            <View style={styles.progress}>
-              <View style={[styles.progressFill, { width: "40%" }]} />
+        {nextBadge && (
+          <View style={styles.nextBadge}>
+            <Text variant="label" semiBold color={Colors.textSecondary}>NEXT BADGE</Text>
+            <View style={styles.nextBadgeCard}>
+              <Text variant="bodySm" bold>{nextBadge.name}</Text>
+              <Text variant="caption" color={Colors.textSecondary}>{nextBadge.requirement}</Text>
+              <View style={styles.progress}>
+                <View style={[styles.progressFill, {
+                  width: `${Math.round(((nextBadge.progress ?? 0) / (nextBadge.required ?? 1)) * 100)}%`
+                }]} />
+              </View>
+              <Text variant="caption" color={Colors.textSecondary}>
+                {nextBadge.progress ?? 0}/{nextBadge.required ?? 0}
+              </Text>
             </View>
-            <Text variant="caption" color={Colors.textSecondary}>2/5</Text>
           </View>
-        </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

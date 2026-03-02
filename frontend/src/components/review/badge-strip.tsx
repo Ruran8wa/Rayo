@@ -49,5 +49,5 @@ const styles = StyleSheet.create({
     ...Shadow.card,
   },
   locked: { opacity: 0.5 },
-  badgeName: { textAlign: "center", marginTop: 2 },
+  badgeName: { textAlign: "center" },
 });

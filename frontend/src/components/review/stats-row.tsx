@@ -15,8 +15,8 @@ interface Props {
 export function StatsRow({ stats }: Props) {
   return (
     <View style={styles.row}>
-      {stats.map((s, i) => (
-        <StatItem key={i} stat={s} />
+      {stats.map((s) => (
+        <StatItem key={s.label} stat={s} />
       ))}
     </View>
   );
