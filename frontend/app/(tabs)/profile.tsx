@@ -39,6 +39,8 @@ export default function ProfileTab() {
   useEffect(() => {
     if (user?.disability_type) {
       setSelectedNeeds([user.disability_type.toLowerCase()]);
+    } else {
+      setSelectedNeeds([]);
     }
   }, [user?.disability_type]);
   const scrollY = useSharedValue(0);
