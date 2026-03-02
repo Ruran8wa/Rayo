@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "@components/ui/text";
-import { Colors, Spacing } from "@constants/theme";
+import { BorderRadius, Colors, Shadow, Spacing } from "@constants/theme";
 
 interface Stat {
   label: string;
@@ -16,22 +16,34 @@ export function StatsRow({ stats }: Props) {
   return (
     <View style={styles.row}>
       {stats.map((s) => (
-        <StatItem key={s.label} stat={s} />
+        <View key={s.label} style={styles.card}>
+          <Text variant="h1">{s.value}</Text>
+          <Text variant="caption" color={Colors.textSecondary} style={styles.label}>
+            {s.label}
+          </Text>
+        </View>
       ))}
     </View>
   );
 }
 
-function StatItem({ stat }: { stat: Stat }) {
-  return (
-    <View style={styles.item}>
-      <Text variant="h1">{stat.value}</Text>
-      <Text variant="caption" color={Colors.textSecondary}>{stat.label}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", justifyContent: "space-around", paddingVertical: Spacing.base },
-  item: { alignItems: "center", gap: Spacing.xs },
+  row: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.xl,
+    marginBottom: Spacing.lg,
+  },
+  card: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: Spacing.base,
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    gap: Spacing.xs,
+    ...Shadow.card,
+  },
+  label: {
+    textAlign: "center",
+  },
 });
