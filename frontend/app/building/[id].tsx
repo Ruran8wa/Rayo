@@ -11,13 +11,14 @@ import { BorderRadius, Colors, Spacing } from "@constants/theme";
 import { buildingsService } from "@services/api/buildings.service";
 
 export default function BuildingDetail() {
-  const params = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string | string[] }>();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
   const router = useRouter();
 
   const { data: building, isLoading, isError } = useQuery({
     queryKey: ["building", id],
-    queryFn: () => buildingsService.getById(id),
+    queryFn: () => buildingsService.getById(id!),
+    enabled: !!id,
   });
 
   if (isLoading) {
@@ -49,6 +50,7 @@ export default function BuildingDetail() {
         <Text variant="bodySm" color={Colors.white + "CC"} style={styles.address}>
           {building.address}
         </Text>
+        <AccessibilityBadge level={building.accessibility_level} />
         <View style={styles.badges}>
           <View style={styles.badge}>
             <Text variant="caption" color={Colors.white}>
@@ -79,6 +81,11 @@ export default function BuildingDetail() {
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.floorsList}
+          ListEmptyComponent={
+            <View style={styles.emptyFloors}>
+              <Text variant="body" color={Colors.textSecondary}>No floor data available.</Text>
+            </View>
+          }
         />
       </View>
     </View>
@@ -107,4 +114,10 @@ const styles = StyleSheet.create({
   floorsSection: { flex: 1, paddingTop: Spacing.xl },
   floorsLabel: { paddingHorizontal: Spacing.xl, marginBottom: Spacing.base, letterSpacing: 0.8 },
   floorsList: { paddingHorizontal: Spacing.base, paddingBottom: Spacing.xl },
+  emptyFloors: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: Spacing.xl,
+  },
 });

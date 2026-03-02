@@ -19,7 +19,7 @@ export function FloorCard({ floor }: Props) {
         <Text variant="caption" color={Colors.textSecondary}>↕ swipe</Text>
       </View>
       <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
-        {floor.services.map((s) => (
+        {(floor.services ?? []).map((s) => (
           <ServiceRow key={s.id} service={s} />
         ))}
       </ScrollView>
