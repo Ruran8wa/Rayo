@@ -76,14 +76,17 @@ export default function Index() {
 
   const { loading: authLoading } = useAuth();
   const [hasOnboarded, setHasOnboarded] = useState<boolean | null>(null);
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
 
   useEffect(() => {
     storage.get<boolean>("hasSeenOnboarding").then((val) => {
       setHasOnboarded(!!val);
     });
+    const timer = setTimeout(() => setMinTimeElapsed(true), 500);
+    return () => clearTimeout(timer);
   }, []);
 
-  const ready = fontsReady && !authLoading && hasOnboarded !== null;
+  const ready = fontsReady && !authLoading && hasOnboarded !== null && minTimeElapsed;
 
   if (ready) {
     if (!hasOnboarded) return <Redirect href="/onboarding" />;
