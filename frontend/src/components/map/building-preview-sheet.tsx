@@ -1,12 +1,35 @@
+import { Ionicons } from "@expo/vector-icons";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { AccessibilityBadge } from "@components/ui/accessibility-badge";
 import { Button } from "@components/ui/button";
 import { Text } from "@components/ui/text";
 import { BorderRadius, Colors, Spacing } from "@constants/theme";
 import type { Building } from "@/types";
+
+type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
+
+const FEATURE_ICONS: Record<string, IoniconName> = {
+  elevator: "arrow-up-circle-outline",
+  lift: "arrow-up-circle-outline",
+  ramp: "trending-up-outline",
+  signs: "text-outline",
+  braille: "ellipsis-horizontal-circle-outline",
+  "wide door": "expand-outline",
+  "grab bar": "remove-outline",
+  parking: "car-outline",
+  handrail: "remove-outline",
+};
+
+function featureIcon(name: string): IoniconName {
+  const key = name.toLowerCase();
+  for (const [k, v] of Object.entries(FEATURE_ICONS)) {
+    if (key.includes(k)) return v;
+  }
+  return "checkmark-circle-outline";
+}
 
 interface Props {
   building: Building | null;
@@ -15,7 +38,7 @@ interface Props {
 
 export function BuildingPreviewSheet({ building, onClose }: Props) {
   const router = useRouter();
-  const snapPoints = useMemo(() => ["28%"], []);
+  const snapPoints = useMemo(() => ["30%"], []);
 
   const handleViewDetail = () => {
     if (!building) return;
@@ -48,6 +71,7 @@ export function BuildingPreviewSheet({ building, onClose }: Props) {
           <View style={styles.features}>
             {building.features.slice(0, 3).map((f) => (
               <View key={f} style={styles.featureTag}>
+                <Ionicons name={featureIcon(f)} size={12} color={Colors.textSecondary} />
                 <Text variant="caption" color={Colors.textSecondary}>{f}</Text>
               </View>
             ))}
@@ -74,8 +98,11 @@ const styles = StyleSheet.create({
   address: { marginTop: Spacing.xs },
   features: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.sm, marginTop: Spacing.md },
   featureTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
     backgroundColor: Colors.background,
-    borderRadius: BorderRadius.sm,
+    borderRadius: BorderRadius.pill,
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     borderWidth: 1,
