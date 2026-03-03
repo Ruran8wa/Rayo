@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient, User, Session } from '@supabase/supabase-js';
 
 interface AppUser {
   id: string;
@@ -31,7 +31,7 @@ export class SupabaseClientService {
     this.client = createClient(url, key);
   }
 
-  private mapResult(user: any, session: any): AuthResult {
+  private mapResult(user: User, session: Session): AuthResult {
     return {
       user: {
         id: user.id,
@@ -60,12 +60,18 @@ export class SupabaseClientService {
       options: { data: { full_name: name, disability_type } },
     });
     if (error) throw new BadRequestException(error.message);
+    if (!data.user || !data.session) {
+      throw new BadRequestException('Registration requires email confirmation');
+    }
     return this.mapResult(data.user, data.session);
   }
 
   async login(email: string, password: string): Promise<AuthResult> {
     const { data, error } = await this.client.auth.signInWithPassword({ email, password });
     if (error) throw new UnauthorizedException(error.message);
+    if (!data.user || !data.session) {
+      throw new UnauthorizedException('Login failed');
+    }
     return this.mapResult(data.user, data.session);
   }
 }

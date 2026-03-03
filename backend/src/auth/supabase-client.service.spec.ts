@@ -96,6 +96,11 @@ describe('SupabaseClientService', () => {
     it('throws BadRequestException when Supabase returns an error', async () => {
       mockSignUp.mockResolvedValue({ data: { user: null, session: null }, error: { message: 'User already registered' } });
 
+      await expect(service.register('a@b.com', 'pass123')).rejects.toThrow('User already registered');
+    });
+
+    it('throws BadRequestException when session is null (email confirmation required)', async () => {
+      mockSignUp.mockResolvedValue({ data: { user: fakeUser, session: null }, error: null });
       await expect(service.register('a@b.com', 'pass123')).rejects.toThrow(BadRequestException);
     });
   });
@@ -125,7 +130,7 @@ describe('SupabaseClientService', () => {
     it('throws UnauthorizedException on invalid credentials', async () => {
       mockSignIn.mockResolvedValue({ data: { user: null, session: null }, error: { message: 'Invalid login credentials' } });
 
-      await expect(service.login('a@b.com', 'wrong')).rejects.toThrow(UnauthorizedException);
+      await expect(service.login('a@b.com', 'wrong')).rejects.toThrow('Invalid login credentials');
     });
   });
 });
