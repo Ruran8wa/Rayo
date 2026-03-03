@@ -9,6 +9,7 @@ import { StatsRow } from "@components/review/stats-row";
 import { BorderRadius, Colors, Shadow, Spacing } from "@constants/theme";
 import { useAuth } from "@contexts/AuthContext";
 
+// TODO: replace with real stats from user stats API endpoint when available
 const EMPTY_STATS = [
   { label: "Reviews", value: 0 },
   { label: "Helpful votes", value: 0 },
