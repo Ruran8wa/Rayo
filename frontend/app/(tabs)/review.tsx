@@ -6,59 +6,44 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "@components/ui/button";
 import { Text } from "@components/ui/text";
 import { StatsRow } from "@components/review/stats-row";
-import { BadgeStrip } from "@components/review/badge-strip";
 import { BorderRadius, Colors, Shadow, Spacing } from "@constants/theme";
 import { useAuth } from "@contexts/AuthContext";
 
-const MOCK_STATS = [
-  { label: "Reviews", value: 12 },
-  { label: "Helpful votes", value: 47 },
-  { label: "Photos", value: 23 },
-  { label: "Badges", value: 3 },
+const EMPTY_STATS = [
+  { label: "Reviews", value: 0 },
+  { label: "Helpful votes", value: 0 },
+  { label: "Photos", value: 0 },
+  { label: "Badges", value: 0 },
 ];
 
-const MOCK_BADGES = [
+const AVAILABLE_BADGES = [
   {
-    id: "1",
-    name: "Helpful Hero",
-    description: "Receive 25 helpful votes on your reviews",
-    category: "community" as const,
-    requirement: "25+ helpful votes",
-    earned: true,
+    id: "community-starter",
+    name: "Community Starter",
+    description: "Write your first accessibility review",
   },
   {
-    id: "2",
-    name: "Photo Pro",
-    description: "Upload 20 or more accessibility photos",
-    category: "photo" as const,
-    requirement: "20+ photos",
-    earned: true,
-  },
-  {
-    id: "3",
-    name: "Health Expert",
-    description: "Review 5 or more hospitals or clinics",
-    category: "building" as const,
-    requirement: "5+ hospitals",
-    earned: true,
-  },
-  {
-    id: "4",
+    id: "civic-guide",
     name: "Civic Guide",
     description: "Review 5 government buildings",
-    category: "building" as const,
-    requirement: "Review 5 gov buildings",
-    progress: 2,
-    required: 5,
-    earned: false,
+  },
+  {
+    id: "health-expert",
+    name: "Health Expert",
+    description: "Review 5 hospitals or clinics",
   },
 ];
+
+const FIRST_REVIEW_BADGE = {
+  name: "Community Starter",
+  description: "Write your first accessibility review",
+  progress: 0,
+  required: 1,
+};
 
 export default function ReviewTab() {
   const router = useRouter();
   const { user } = useAuth();
-
-  const nextBadge = MOCK_BADGES.find((b) => !b.earned);
 
   if (!user) {
     return (
@@ -98,7 +83,7 @@ export default function ReviewTab() {
           </Text>
         </View>
 
-        <StatsRow stats={MOCK_STATS} />
+        <StatsRow stats={EMPTY_STATS} />
 
         <Pressable
           style={styles.writeBtn}
@@ -110,43 +95,60 @@ export default function ReviewTab() {
           <Text style={styles.writeBtnLabel}>Write a new review</Text>
         </Pressable>
 
-        <BadgeStrip badges={MOCK_BADGES} onSeeAll={() => {}} />
-
-        {nextBadge && (
-          <View style={styles.nextSection}>
-            <Text variant="label" semiBold color={Colors.textSecondary} style={styles.nextLabel}>
-              NEXT BADGE
-            </Text>
-            <View style={styles.nextCard}>
-              <View style={styles.nextIconBox}>
-                <Ionicons name="shield-checkmark-outline" size={24} color={Colors.textSecondary} />
-              </View>
-              <View style={styles.nextInfo}>
-                <View style={styles.nextTopRow}>
-                  <Text variant="bodySm" semiBold style={styles.nextName}>{nextBadge.name}</Text>
-                  <Text variant="caption" color={Colors.textSecondary}>
-                    {nextBadge.progress ?? 0}/{nextBadge.required ?? 0}
+        {/* Badges to earn */}
+        <View style={styles.badgesSection}>
+          <Text variant="label" semiBold color={Colors.textSecondary} style={styles.sectionLabel}>
+            BADGES TO EARN
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.badgeScroll}
+          >
+            {AVAILABLE_BADGES.map((badge) => (
+              <View key={badge.id} style={styles.lockedCard}>
+                <View style={styles.lockIconBox}>
+                  <Ionicons name="lock-closed-outline" size={20} color={Colors.textSecondary} />
+                </View>
+                <View style={styles.lockedInfo}>
+                  <Text variant="bodySm" semiBold numberOfLines={1}>{badge.name}</Text>
+                  <Text variant="caption" color={Colors.textSecondary} style={styles.lockedDesc} numberOfLines={2}>
+                    {badge.description}
                   </Text>
                 </View>
-                <Text variant="caption" color={Colors.textSecondary} style={styles.nextDesc}>
-                  {nextBadge.description}
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Next badge spotlight */}
+        <View style={styles.nextSection}>
+          <Text variant="label" semiBold color={Colors.textSecondary} style={styles.nextLabel}>
+            NEXT BADGE
+          </Text>
+          <View style={styles.nextCard}>
+            <View style={styles.nextIconBox}>
+              <Ionicons name="shield-checkmark-outline" size={24} color={Colors.textSecondary} />
+            </View>
+            <View style={styles.nextInfo}>
+              <View style={styles.nextTopRow}>
+                <Text variant="bodySm" semiBold style={styles.nextName}>
+                  {FIRST_REVIEW_BADGE.name}
                 </Text>
-                <View style={styles.progressTrack}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      {
-                        width: `${Math.round(
-                          ((nextBadge.progress ?? 0) / (nextBadge.required ?? 1)) * 100
-                        )}%`,
-                      },
-                    ]}
-                  />
-                </View>
+                <Text variant="caption" color={Colors.textSecondary}>
+                  {FIRST_REVIEW_BADGE.progress}/{FIRST_REVIEW_BADGE.required}
+                </Text>
+              </View>
+              <Text variant="caption" color={Colors.textSecondary} style={styles.nextDesc}>
+                {FIRST_REVIEW_BADGE.description}
+              </Text>
+              <View style={styles.progressTrack}>
+                <View style={[styles.progressFill, { width: "0%" }]} />
               </View>
             </View>
           </View>
-        )}
+        </View>
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -209,11 +211,51 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     letterSpacing: 0.2,
   },
+  badgesSection: {
+    marginBottom: Spacing.xl,
+  },
+  sectionLabel: {
+    paddingHorizontal: Spacing.xl,
+    marginBottom: Spacing.base,
+    letterSpacing: 0.8,
+  },
+  badgeScroll: {
+    paddingHorizontal: Spacing.xl,
+    gap: Spacing.base,
+  },
+  lockedCard: {
+    width: 160,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.base,
+    ...Shadow.card,
+  },
+  lockIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  lockedInfo: {
+    flex: 1,
+    gap: Spacing.xs,
+  },
+  lockedDesc: {
+    lineHeight: 15,
+  },
   nextSection: {
     paddingHorizontal: Spacing.xl,
   },
   nextLabel: {
     marginBottom: Spacing.sm,
+    letterSpacing: 0.8,
   },
   nextCard: {
     flexDirection: "row",
