@@ -1,5 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
+import { InternalServerErrorException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -67,7 +68,7 @@ describe('UsersService', () => {
     it('throws InternalServerErrorException when Supabase returns an error', async () => {
       mockAdminListUsers.mockResolvedValue({ data: null, error: { message: 'Admin error' } });
 
-      await expect(service.listUsers()).rejects.toThrow();
+      await expect(service.listUsers()).rejects.toThrow(InternalServerErrorException);
     });
   });
 });
