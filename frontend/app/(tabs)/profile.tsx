@@ -16,6 +16,7 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { Button } from "@components/ui/button";
 import { Text } from "@components/ui/text";
 import { BorderRadius, Colors, Shadow, Spacing } from "@constants/theme";
 import { useAuth } from "@contexts/AuthContext";
@@ -65,24 +66,30 @@ export default function ProfileTab() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.guestContainer}>
-          <Ionicons name="person-circle-outline" size={64} color={Colors.border} />
+          <View style={styles.guestIconBox}>
+            <Ionicons name="person-outline" size={32} color={Colors.primary} />
+          </View>
           <Text variant="h2" style={styles.guestTitle}>You're browsing as a guest</Text>
           <Text variant="body" color={Colors.textSecondary} style={styles.guestSub}>
             Create an account to save places, write reviews, and personalize your experience.
           </Text>
-          <Pressable
-            style={styles.signInBtn}
+          <Button
+            label="Sign in"
+            onPress={() => router.push("/(auth)/sign-in")}
+            fullWidth
+          />
+          <Button
+            label="Create an account"
+            variant="outline"
             onPress={() => router.push("/(auth)/register")}
-          >
-            <Text variant="label" color={Colors.white} semiBold>Create an account</Text>
-          </Pressable>
-          <Pressable onPress={() => router.push("/(auth)/sign-in")}>
-            <Text variant="label" color={Colors.primary} semiBold>Sign in</Text>
-          </Pressable>
+            fullWidth
+          />
         </View>
       </SafeAreaView>
     );
   }
+
+  const earnedBadges: string[] = [];
 
   const initials =
     (user.name ?? "")
@@ -106,14 +113,16 @@ export default function ProfileTab() {
           </View>
           <Text variant="h2" color={Colors.white} style={styles.name}>{user.name}</Text>
           <Text variant="bodySm" color={Colors.white + "CC"}>{user.email}</Text>
-          <View style={styles.badges}>
-            {["Helpful Hero", "Photo Pro", "Health Expert"].map((b) => (
-              <View key={b} style={styles.badgeChip}>
-                <Ionicons name="star" size={12} color={Colors.white} />
-                <Text variant="caption" color={Colors.white}>{b}</Text>
-              </View>
-            ))}
-          </View>
+          {earnedBadges.length > 0 && (
+            <View style={styles.badges}>
+              {earnedBadges.map((b) => (
+                <View key={b} style={styles.badgeChip}>
+                  <Ionicons name="star" size={12} color={Colors.white} />
+                  <Text variant="caption" color={Colors.white}>{b}</Text>
+                </View>
+              ))}
+            </View>
+          )}
         </Animated.View>
 
         {/* Accessibility needs */}
@@ -280,17 +289,21 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    padding: Spacing.xxl,
+    paddingHorizontal: Spacing.xl,
+    gap: Spacing.base,
   },
-  guestTitle: { marginTop: Spacing.base, marginBottom: Spacing.sm },
-  guestSub: { textAlign: "center", marginBottom: Spacing.xl, lineHeight: 24 },
-  signInBtn: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.xxl,
-    paddingVertical: Spacing.base,
-    borderRadius: BorderRadius.pill,
-    marginBottom: Spacing.base,
+  guestIconBox: {
+    width: 72,
+    height: 72,
+    borderRadius: BorderRadius.xl,
+    backgroundColor: Colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.sm,
+    ...Shadow.card,
   },
+  guestTitle: { textAlign: "center" },
+  guestSub: { textAlign: "center", marginBottom: Spacing.base, lineHeight: 24 },
 });
 
 const sectionStyles = StyleSheet.create({
