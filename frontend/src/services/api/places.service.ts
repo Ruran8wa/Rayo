@@ -14,7 +14,81 @@ export interface PlaceDetail {
   longitude: number;
 }
 
+export interface NearbyPlace {
+  placeId: string;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  category: string;
+  rating?: number;
+  totalRatings?: number;
+}
+
 const BASE = "https://maps.googleapis.com/maps/api/place";
+
+// Google Places types → our category labels
+const TYPE_TO_CATEGORY: Record<string, string> = {
+  hospital: "Health",
+  pharmacy: "Health",
+  doctor: "Health",
+  clinic: "Health",
+  school: "Education",
+  university: "Education",
+  bank: "Bank",
+  atm: "Bank",
+  local_government_office: "Government",
+  city_hall: "Government",
+  post_office: "Government",
+  police: "Government",
+};
+
+// Category filter → Google Places types to search
+const CATEGORY_TYPES: Record<string, string[]> = {
+  Health:     ["hospital", "pharmacy"],
+  Government: ["local_government_office", "city_hall"],
+  Bank:       ["bank", "atm"],
+  Education:  ["school", "university"],
+};
+
+// "Near me" searches all of these in parallel
+const DEFAULT_TYPES = ["hospital", "school", "bank", "local_government_office"];
+
+function mapGoogleTypes(types: string[]): string {
+  for (const t of types) {
+    if (TYPE_TO_CATEGORY[t]) return TYPE_TO_CATEGORY[t];
+  }
+  return "Other";
+}
+
+async function searchByType(lat: number, lng: number, type: string): Promise<NearbyPlace[]> {
+  const params = new URLSearchParams({
+    location: `${lat},${lng}`,
+    radius: "5000",
+    type,
+    key: ENV.googleMapsApiKey,
+  });
+  try {
+    const res = await fetch(`${BASE}/nearbysearch/json?${params}`);
+    const json = await res.json();
+    if (json.status !== "OK" && json.status !== "ZERO_RESULTS") return [];
+    return (json.results ?? []).slice(0, 8).map((p: Record<string, unknown>) => {
+      const geometry = p.geometry as { location: { lat: number; lng: number } };
+      return {
+        placeId: p.place_id as string,
+        name: p.name as string,
+        address: (p.vicinity as string) ?? "",
+        latitude: geometry.location.lat,
+        longitude: geometry.location.lng,
+        category: mapGoogleTypes((p.types as string[]) ?? []),
+        rating: p.rating as number | undefined,
+        totalRatings: p.user_ratings_total as number | undefined,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
 
 export const placesService = {
   async autocomplete(
@@ -31,11 +105,14 @@ export const placesService = {
     const res = await fetch(`${BASE}/autocomplete/json?${params}`);
     const json = await res.json();
     if (json.status !== "OK" && json.status !== "ZERO_RESULTS") return [];
-    return (json.predictions ?? []).map((p: any) => ({
-      placeId: p.place_id,
-      name: p.structured_formatting?.main_text ?? p.description,
-      address: p.structured_formatting?.secondary_text ?? "",
-    }));
+    return (json.predictions ?? []).map((p: Record<string, unknown>) => {
+      const sf = p.structured_formatting as Record<string, string> | undefined;
+      return {
+        placeId: p.place_id as string,
+        name: sf?.main_text ?? (p.description as string),
+        address: sf?.secondary_text ?? "",
+      };
+    });
   },
 
   async getDetails(placeId: string): Promise<PlaceDetail | null> {
@@ -47,13 +124,40 @@ export const placesService = {
     const res = await fetch(`${BASE}/details/json?${params}`);
     const json = await res.json();
     if (json.status !== "OK") return null;
-    const r = json.result;
+    const r = json.result as Record<string, unknown>;
+    const geom = r.geometry as { location: { lat: number; lng: number } };
     return {
       placeId,
-      name: r.name,
-      address: r.formatted_address,
-      latitude: r.geometry.location.lat,
-      longitude: r.geometry.location.lng,
+      name: r.name as string,
+      address: r.formatted_address as string,
+      latitude: geom.location.lat,
+      longitude: geom.location.lng,
     };
+  },
+
+  /**
+   * Nearby Search using Google Places.
+   * category = "Health" | "Government" | "Bank" | "Education" | undefined (= all public services)
+   */
+  async nearbySearch(
+    lat: number,
+    lng: number,
+    category?: string
+  ): Promise<NearbyPlace[]> {
+    const types = category ? (CATEGORY_TYPES[category] ?? DEFAULT_TYPES) : DEFAULT_TYPES;
+
+    // Run all type searches in parallel, merge & deduplicate by placeId
+    const arrays = await Promise.all(types.map((t) => searchByType(lat, lng, t)));
+    const seen = new Set<string>();
+    const results: NearbyPlace[] = [];
+    for (const list of arrays) {
+      for (const place of list) {
+        if (!seen.has(place.placeId)) {
+          seen.add(place.placeId);
+          results.push(place);
+        }
+      }
+    }
+    return results;
   },
 };
