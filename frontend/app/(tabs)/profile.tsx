@@ -89,6 +89,7 @@ export default function ProfileTab() {
     );
   }
 
+  // TODO: replace with earned badges from user profile API when available
   const earnedBadges: string[] = [];
 
   const initials =
