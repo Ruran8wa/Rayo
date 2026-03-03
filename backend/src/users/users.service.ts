@@ -2,20 +2,46 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  InternalServerErrorException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../prisma/prisma.service';
 import { PreferencesDto } from './dto/preferences.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  private adminClient: SupabaseClient;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {
+    const url = this.configService.getOrThrow<string>('SUPABASE_URL');
+    const serviceKey = this.configService.getOrThrow<string>('SUPABASE_API_SECRET');
+    this.adminClient = createClient(url, serviceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+  }
+
+  async listUsers() {
+    const { data, error } = await this.adminClient.auth.admin.listUsers();
+    if (error) throw new InternalServerErrorException(error.message);
+    return {
+      users: data.users.map(({ id, email, created_at, last_sign_in_at }) => ({
+        id,
+        email,
+        created_at,
+        last_sign_in_at,
+      })),
+    };
+  }
 
   async getPreferences(userId: string) {
     const prefs = await this.prisma.userPreference.findUnique({
       where: { user_id: userId },
     });
-
     return prefs || null;
   }
 
@@ -59,10 +85,7 @@ export class UsersService {
 
     try {
       return await this.prisma.savedPlace.create({
-        data: {
-          user_id: userId,
-          building_id: buildingId,
-        },
+        data: { user_id: userId, building_id: buildingId },
         include: {
           building: {
             include: {
