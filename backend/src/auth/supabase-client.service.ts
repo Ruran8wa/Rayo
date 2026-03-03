@@ -16,7 +16,7 @@ interface AuthTokens {
   refresh_token?: string;
 }
 
-interface AuthResult {
+export interface AuthResult {
   user: AppUser;
   tokens: AuthTokens;
 }
@@ -35,7 +35,7 @@ export class SupabaseClientService {
     return {
       user: {
         id: user.id,
-        email: user.email,
+        email: user.email ?? '',
         name: user.user_metadata?.full_name ?? user.email,
         disability_type: user.user_metadata?.disability_type,
         createdAt: user.created_at,
