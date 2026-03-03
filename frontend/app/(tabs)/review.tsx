@@ -35,8 +35,7 @@ const AVAILABLE_BADGES = [
 ];
 
 const FIRST_REVIEW_BADGE = {
-  name: "Community Starter",
-  description: "Write your first accessibility review",
+  ...AVAILABLE_BADGES[0],
   progress: 0,
   required: 1,
 };
@@ -92,7 +91,7 @@ export default function ReviewTab() {
           accessibilityLabel="Write a new review"
         >
           <Ionicons name="create-outline" size={18} color={Colors.white} />
-          <Text style={styles.writeBtnLabel}>Write a new review</Text>
+          <Text variant="label" semiBold color={Colors.white}>Write a new review</Text>
         </Pressable>
 
         {/* Badges to earn */}
@@ -204,12 +203,6 @@ const styles = StyleSheet.create({
     height: 52,
     marginHorizontal: Spacing.xl,
     marginBottom: Spacing.xl,
-  },
-  writeBtnLabel: {
-    color: Colors.white,
-    fontSize: 15,
-    fontWeight: "600",
-    letterSpacing: 0.2,
   },
   badgesSection: {
     marginBottom: Spacing.xl,
