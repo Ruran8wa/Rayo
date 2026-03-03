@@ -20,4 +20,15 @@ describe('AuthDto', () => {
     const errors = await validate(dto);
     expect(errors.some(e => e.property === 'password')).toBe(true);
   });
+
+  it('passes with optional name and disability_type included', async () => {
+    const dto = plainToInstance(AuthDto, {
+      email: 'test@example.com',
+      password: 'secret123',
+      name: 'Jane Smith',
+      disability_type: 'Mobility impairment',
+    });
+    const errors = await validate(dto);
+    expect(errors).toHaveLength(0);
+  });
 });
