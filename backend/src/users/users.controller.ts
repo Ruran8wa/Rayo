@@ -23,6 +23,12 @@ type AuthUser = { userId: string };
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Get()
+  @ApiOperation({ summary: 'List all registered users' })
+  listUsers() {
+    return this.usersService.listUsers();
+  }
+
   @Get('preferences')
   @ApiOperation({ summary: 'Get user disability preferences' })
   getPreferences(@CurrentUser() user: AuthUser) {
