@@ -23,6 +23,15 @@ const configServiceMock: Partial<ConfigService> = {
   },
 };
 
+const fakeUser = {
+  id: 'uid-1',
+  email: 'a@b.com',
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-02T00:00:00Z',
+  user_metadata: { full_name: 'Jane Smith', disability_type: 'Mobility impairment' },
+};
+const fakeSession = { access_token: 'tok', refresh_token: 'ref', expires_in: 3600 };
+
 describe('SupabaseClientService', () => {
   let service: SupabaseClientService;
 
@@ -42,36 +51,79 @@ describe('SupabaseClientService', () => {
   afterEach(() => jest.clearAllMocks());
 
   describe('register', () => {
-    it('returns user and session on success', async () => {
-      const fakeUser = { id: 'uid-1', email: 'a@b.com' };
-      const fakeSession = { access_token: 'tok', refresh_token: 'ref', expires_in: 3600 };
+    it('calls signUp with user_metadata when name and disability_type provided', async () => {
       mockSignUp.mockResolvedValue({ data: { user: fakeUser, session: fakeSession }, error: null });
+
+      await service.register('a@b.com', 'pass123', 'Jane Smith', 'Mobility impairment');
+
+      expect(mockSignUp).toHaveBeenCalledWith({
+        email: 'a@b.com',
+        password: 'pass123',
+        options: { data: { full_name: 'Jane Smith', disability_type: 'Mobility impairment' } },
+      });
+    });
+
+    it('returns mapped AppUser and tokens on success', async () => {
+      mockSignUp.mockResolvedValue({ data: { user: fakeUser, session: fakeSession }, error: null });
+
+      const result = await service.register('a@b.com', 'pass123', 'Jane Smith', 'Mobility impairment');
+
+      expect(result).toEqual({
+        user: {
+          id: 'uid-1',
+          email: 'a@b.com',
+          name: 'Jane Smith',
+          disability_type: 'Mobility impairment',
+          createdAt: '2024-01-01T00:00:00Z',
+          updatedAt: '2024-01-02T00:00:00Z',
+        },
+        tokens: {
+          access_token: 'tok',
+          refresh_token: 'ref',
+        },
+      });
+    });
+
+    it('falls back to email as name when user_metadata has no full_name', async () => {
+      const userNoName = { ...fakeUser, user_metadata: {} };
+      mockSignUp.mockResolvedValue({ data: { user: userNoName, session: fakeSession }, error: null });
 
       const result = await service.register('a@b.com', 'pass123');
 
-      expect(result).toEqual({ user: fakeUser, session: fakeSession });
+      expect(result.user.name).toBe('a@b.com');
     });
 
     it('throws BadRequestException when Supabase returns an error', async () => {
-      mockSignUp.mockResolvedValue({ data: null, error: { message: 'User already registered', status: 400 } });
+      mockSignUp.mockResolvedValue({ data: { user: null, session: null }, error: { message: 'User already registered' } });
 
       await expect(service.register('a@b.com', 'pass123')).rejects.toThrow(BadRequestException);
     });
   });
 
   describe('login', () => {
-    it('returns user and session on success', async () => {
-      const fakeUser = { id: 'uid-1', email: 'a@b.com' };
-      const fakeSession = { access_token: 'tok', refresh_token: 'ref', expires_in: 3600 };
+    it('returns mapped AppUser and tokens on success', async () => {
       mockSignIn.mockResolvedValue({ data: { user: fakeUser, session: fakeSession }, error: null });
 
       const result = await service.login('a@b.com', 'pass123');
 
-      expect(result).toEqual({ user: fakeUser, session: fakeSession });
+      expect(result).toEqual({
+        user: {
+          id: 'uid-1',
+          email: 'a@b.com',
+          name: 'Jane Smith',
+          disability_type: 'Mobility impairment',
+          createdAt: '2024-01-01T00:00:00Z',
+          updatedAt: '2024-01-02T00:00:00Z',
+        },
+        tokens: {
+          access_token: 'tok',
+          refresh_token: 'ref',
+        },
+      });
     });
 
     it('throws UnauthorizedException on invalid credentials', async () => {
-      mockSignIn.mockResolvedValue({ data: null, error: { message: 'Invalid login credentials', status: 400 } });
+      mockSignIn.mockResolvedValue({ data: { user: null, session: null }, error: { message: 'Invalid login credentials' } });
 
       await expect(service.login('a@b.com', 'wrong')).rejects.toThrow(UnauthorizedException);
     });
