@@ -1,21 +1,35 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { Marker, PROVIDER_GOOGLE, type Region } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { buildingsService } from "@services/api/buildings.service";
 import { placesService, type PlaceDetail, type PlacePrediction } from "@services/api/places.service";
+import { sitesService } from "@services/api/sites.service";
 import { useMapStore } from "@stores/map.store";
 import { useFilterStore } from "@stores/filter.store";
 import { MapSearchBar } from "@components/map/map-search-bar";
 import { CategoryChipRow } from "@components/map/category-chip-row";
 import { BuildingPins } from "@components/map/building-pins";
 import { BuildingPreviewSheet } from "@components/map/building-preview-sheet";
+import { SitePreviewSheet } from "@components/map/site-preview-sheet";
 import { UnverifiedPlaceSheet } from "@components/map/unverified-place-sheet";
 import { Text } from "@components/ui/text";
 import { BorderRadius, Colors, Shadow, Spacing } from "@constants/theme";
 
 const KIGALI_BOUNDS = { south: -2.0, west: 29.9, north: -1.8, east: 30.2 } as const;
+
+/** Snap the map back inside Kigali bounds if the user pans outside. */
+function clampRegion(region: Region, mapRef: React.RefObject<MapView | null>): void {
+  const lat = Math.max(KIGALI_BOUNDS.south, Math.min(KIGALI_BOUNDS.north, region.latitude));
+  const lng = Math.max(KIGALI_BOUNDS.west, Math.min(KIGALI_BOUNDS.east, region.longitude));
+  if (lat !== region.latitude || lng !== region.longitude) {
+    mapRef.current?.animateToRegion(
+      { latitude: lat, longitude: lng, latitudeDelta: region.latitudeDelta, longitudeDelta: region.longitudeDelta },
+      300
+    );
+  }
+}
 
 const INITIAL_REGION = {
   latitude: -1.9441,
@@ -27,7 +41,7 @@ const INITIAL_REGION = {
 export default function MapTab() {
   const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);
-  const { previewBuilding, setSelectedBuilding, clearSelection } = useMapStore();
+  const { previewBuilding, previewSite, setSelectedBuilding, setPreviewSite, clearSelection } = useMapStore();
   const { mapSearchQuery, setMapSearch } = useFilterStore();
 
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -35,6 +49,7 @@ export default function MapTab() {
   const [predictionsLoading, setPredictionsLoading] = useState(false);
   const [unverifiedPlace, setUnverifiedPlace] = useState<PlaceDetail | null>(null);
   const [selectingPlace, setSelectingPlace] = useState(false);
+  const [previewSiteName, setPreviewSiteName] = useState("");
 
   // Debounce search input
   useEffect(() => {
@@ -64,8 +79,14 @@ export default function MapTab() {
   const handlePinPress = async (id: string) => {
     try {
       const building = await buildingsService.getById(id);
-      setSelectedBuilding(building);
       setUnverifiedPlace(null);
+      if (building.site_id) {
+        const site = await sitesService.getById(building.site_id);
+        setPreviewSiteName(building.name);
+        setPreviewSite(site);
+      } else {
+        setSelectedBuilding(building);
+      }
     } catch (error) {
       console.error("Failed to load building:", error);
     }
@@ -101,10 +122,15 @@ export default function MapTab() {
       });
 
       if (dbMatch) {
-        // Known building — show full accessibility data
         const full = await buildingsService.getById(dbMatch.id);
-        setSelectedBuilding(full);
         setUnverifiedPlace(null);
+        if (full.site_id) {
+          const site = await sitesService.getById(full.site_id);
+          setPreviewSiteName(prediction.name);
+          setPreviewSite(site);
+        } else {
+          setSelectedBuilding(full);
+        }
       } else {
         // Not in our system — show gray unverified pin + sheet
         clearSelection();
@@ -131,10 +157,12 @@ export default function MapTab() {
         style={styles.map}
         provider={PROVIDER_GOOGLE}
         initialRegion={INITIAL_REGION}
+        minZoomLevel={11}
         showsUserLocation={false}
         showsMyLocationButton={false}
         showsCompass={false}
         toolbarEnabled={false}
+        onRegionChangeComplete={(region) => clampRegion(region, mapRef)}
       >
         {geojson != null && (geojson.features?.length ?? 0) > 0 && (
           <BuildingPins geojson={geojson} onPinPress={handlePinPress} />
@@ -208,6 +236,11 @@ export default function MapTab() {
       {/* Bottom sheets — only one shows at a time */}
       <BuildingPreviewSheet
         building={previewBuilding}
+        onClose={clearSelection}
+      />
+      <SitePreviewSheet
+        site={previewSite}
+        placeName={previewSiteName}
         onClose={clearSelection}
       />
       <UnverifiedPlaceSheet
