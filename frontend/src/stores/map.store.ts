@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Building } from "@/types";
+import type { Building, Site } from "@/types";
 
 export type MapRegion = {
   latitude: number;
@@ -10,8 +10,10 @@ export type MapRegion = {
 export interface MapState {
   selectedBuildingId: string | null;
   previewBuilding: Building | null;
+  previewSite: Site | null;
   mapRegion: MapRegion;
   setSelectedBuilding: (building: Building | null) => void;
+  setPreviewSite: (site: Site | null) => void;
   setMapRegion: (region: MapRegion) => void;
   clearSelection: () => void;
 }
@@ -19,8 +21,9 @@ export interface MapState {
 export const useMapStore = create<MapState>((set) => ({
   selectedBuildingId: null,
   previewBuilding: null,
+  previewSite: null,
   mapRegion: {
-    latitude: -1.9441, // Kigali, Rwanda (default)
+    latitude: -1.9441,
     longitude: 30.0619,
     zoom: 13,
   },
@@ -28,7 +31,15 @@ export const useMapStore = create<MapState>((set) => ({
     set({
       selectedBuildingId: building?.id ?? null,
       previewBuilding: building,
+      previewSite: null,       // mutually exclusive
+    }),
+  setPreviewSite: (site) =>
+    set({
+      previewSite: site,
+      previewBuilding: null,   // mutually exclusive
+      selectedBuildingId: null,
     }),
   setMapRegion: (region) => set({ mapRegion: region }),
-  clearSelection: () => set({ selectedBuildingId: null, previewBuilding: null }),
+  clearSelection: () =>
+    set({ selectedBuildingId: null, previewBuilding: null, previewSite: null }),
 }));
