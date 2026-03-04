@@ -41,6 +41,7 @@ const INITIAL_REGION = {
 export default function MapTab() {
   const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);
+  const pinPressId = useRef(0);
   const { previewBuilding, previewSite, setSelectedBuilding, setPreviewSite, clearSelection } = useMapStore();
   const { mapSearchQuery, setMapSearch } = useFilterStore();
 
@@ -77,12 +78,15 @@ export default function MapTab() {
   });
 
   const handlePinPress = async (id: string) => {
+    const thisPress = ++pinPressId.current;
     try {
       const building = await buildingsService.getById(id);
+      if (thisPress !== pinPressId.current) return;
       setUnverifiedPlace(null);
       if (building.site_id) {
         const site = await sitesService.getById(building.site_id);
-        setPreviewSiteName(building.name);
+        if (thisPress !== pinPressId.current) return;
+        setPreviewSiteName(site.name);
         setPreviewSite(site);
       } else {
         setSelectedBuilding(building);
@@ -123,12 +127,13 @@ export default function MapTab() {
 
       if (dbMatch) {
         const full = await buildingsService.getById(dbMatch.id);
-        setUnverifiedPlace(null);
         if (full.site_id) {
           const site = await sitesService.getById(full.site_id);
-          setPreviewSiteName(prediction.name);
+          setUnverifiedPlace(null);
+          setPreviewSiteName(site.name);
           setPreviewSite(site);
         } else {
+          setUnverifiedPlace(null);
           setSelectedBuilding(full);
         }
       } else {
@@ -136,8 +141,8 @@ export default function MapTab() {
         clearSelection();
         setUnverifiedPlace(detail);
       }
-    } catch {
-      // silent
+    } catch (error) {
+      console.error("Failed to resolve prediction:", error);
     } finally {
       setSelectingPlace(false);
     }
@@ -145,6 +150,11 @@ export default function MapTab() {
 
   const handleClearUnverified = () => {
     setUnverifiedPlace(null);
+    clearSelection();
+  };
+
+  const handleClearSite = () => {
+    setPreviewSiteName("");
     clearSelection();
   };
 
@@ -241,7 +251,7 @@ export default function MapTab() {
       <SitePreviewSheet
         site={previewSite}
         placeName={previewSiteName}
-        onClose={clearSelection}
+        onClose={handleClearSite}
       />
       <UnverifiedPlaceSheet
         place={unverifiedPlace}
