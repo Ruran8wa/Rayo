@@ -54,6 +54,7 @@ export interface Floor {
 // Building
 export interface Building {
   id: string;
+  site_id?: string;      // set when building is part of a Site search result
   name: string;
   address: string;
   latitude: number;
@@ -65,7 +66,6 @@ export interface Building {
   distance_km?: number;  // set client-side when user location is known
   features: string[];    // top-level features
   floors?: Floor[];      // populated in detail view
-  site_id?: string;
 }
 
 // Site (a campus/complex containing multiple buildings)
