@@ -71,7 +71,7 @@ function mapBuilding(b: Record<string, unknown>): Building {
     floors: b.floors
       ? (b.floors as Record<string, unknown>[]).map(mapFloor)
       : undefined,
-    site_id: (site.id as string) ?? undefined,
+    site_id: site.id as string | undefined,
   };
 }
 
