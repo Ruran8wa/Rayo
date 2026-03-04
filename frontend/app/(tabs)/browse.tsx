@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import * as Location from "expo-location";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -96,6 +96,8 @@ export default function Browse() {
   const [predictionsLoading, setPredictionsLoading] = useState(false);
   const [selectingPlace, setSelectingPlace] = useState(false);
 
+  const selectionId = useRef(0);
+
   // Sheet state — only one open at a time
   const [selectedPlace, setSelectedPlace] = useState<NearbyPlace | null>(null);
   const [previewBuilding, setPreviewBuilding] = useState<Building | null>(null);
@@ -154,20 +156,25 @@ export default function Browse() {
   const handleCardPress = (place: NearbyPlace) => {
     setPreviewBuilding(null);
     setUnverifiedPlace(null);
+    setPreviewSite(null);
+    setPreviewSiteName("");
     setSelectedPlace(place);
   };
 
   // Tap an autocomplete prediction — check DB, show the right sheet
   const handlePredictionPress = async (prediction: PlacePrediction) => {
+    const thisSelection = ++selectionId.current;
     setBrowseSearch("");
     setPredictions([]);
     setSelectingPlace(true);
 
     try {
       const detail = await placesService.getDetails(prediction.placeId);
-      if (!detail) return;
+      if (!detail || thisSelection !== selectionId.current) return;
 
       const dbResults = await buildingsService.search(prediction.name);
+      if (thisSelection !== selectionId.current) return;
+
       const dbMatch = dbResults.find((b) => {
         const latClose = Math.abs(b.latitude - detail.latitude) < 0.015;
         const lngClose = Math.abs(b.longitude - detail.longitude) < 0.015;
@@ -177,8 +184,10 @@ export default function Browse() {
       setSelectedPlace(null);
       if (dbMatch) {
         const full = await buildingsService.getById(dbMatch.id);
+        if (thisSelection !== selectionId.current) return;
         if (full.site_id) {
           const site = await sitesService.getById(full.site_id);
+          if (thisSelection !== selectionId.current) return;
           setUnverifiedPlace(null);
           setPreviewSiteName(site.name);
           setPreviewBuilding(null);
@@ -193,11 +202,16 @@ export default function Browse() {
         setPreviewSite(null);
         setUnverifiedPlace(detail);
       }
-    } catch {
-      // silent
+    } catch (error) {
+      console.error("Failed to resolve prediction:", error);
     } finally {
-      setSelectingPlace(false);
+      if (thisSelection === selectionId.current) setSelectingPlace(false);
     }
+  };
+
+  const handleClearSite = () => {
+    setPreviewSiteName("");
+    setPreviewSite(null);
   };
 
   const showPredictions = predictions.length > 0 && !selectingPlace;
@@ -343,10 +357,7 @@ export default function Browse() {
       <SitePreviewSheet
         site={previewSite}
         placeName={previewSiteName}
-        onClose={() => {
-          setPreviewSiteName("");
-          setPreviewSite(null);
-        }}
+        onClose={handleClearSite}
       />
       <UnverifiedPlaceSheet
         place={unverifiedPlace}
