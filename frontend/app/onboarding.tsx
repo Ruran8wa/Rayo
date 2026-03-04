@@ -8,6 +8,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Text as RNText,
   View,
 } from "react-native";
 import Animated, {
@@ -20,12 +21,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { OnboardingSlide } from "@components/onboarding/slide";
 import { Button } from "@components/ui/button";
 import { Text } from "@components/ui/text";
-import { Colors, Spacing } from "@constants/theme";
+import { Colors, FontFamily, Spacing } from "@constants/theme";
 import { storage } from "@utils/storage";
 
 const { width: W } = Dimensions.get("window");
 
-const SLIDES = [
+// Feature slides — rendered at indices 1, 2, 3 (index 0 is the intro)
+const FEATURE_SLIDES = [
   {
     title: "Find accessible spaces near you",
     subtitle: "Discover buildings that are fully, partially, or not accessible — all in one map.",
@@ -40,6 +42,8 @@ const SLIDES = [
   },
 ];
 
+const TOTAL_SLIDES = FEATURE_SLIDES.length + 1; // intro + 3 feature slides
+
 export default function Onboarding() {
   const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
@@ -51,7 +55,7 @@ export default function Onboarding() {
 
   const handleContinue = () => {
     const next = Math.round(scrollX.value / W) + 1;
-    if (next < SLIDES.length) {
+    if (next < TOTAL_SLIDES) {
       scrollRef.current?.scrollTo({ x: next * W, animated: true });
     } else {
       completeOnboarding();
@@ -87,10 +91,14 @@ export default function Onboarding() {
         scrollEventThrottle={16}
         style={styles.scroll}
       >
-        {SLIDES.map((slide, i) => (
+        {/* Slide 0 — branded intro */}
+        <IntroSlide scrollX={scrollX} />
+
+        {/* Slides 1-3 — feature slides */}
+        {FEATURE_SLIDES.map((slide, i) => (
           <OnboardingSlide
             key={i}
-            index={i}
+            index={i + 1}
             title={slide.title}
             subtitle={slide.subtitle}
             scrollX={scrollX}
@@ -106,7 +114,7 @@ export default function Onboarding() {
 
       {/* Dots */}
       <View style={styles.dots}>
-        {SLIDES.map((_, i) => (
+        {Array.from({ length: TOTAL_SLIDES }).map((_, i) => (
           <DotIndicator key={i} index={i} scrollX={scrollX} />
         ))}
       </View>
@@ -123,6 +131,64 @@ export default function Onboarding() {
     </SafeAreaView>
   );
 }
+
+// ─── Slide 0: branded intro ────────────────────────────────────────────────
+
+function IntroSlide({ scrollX }: { scrollX: SharedValue<number> }) {
+  const animatedStyle = useAnimatedStyle(() => {
+    const opacity = 1 - Math.abs(scrollX.value / W);
+    return { opacity };
+  });
+  return (
+    <View style={introStyles.slide}>
+      <Animated.View style={[introStyles.content, animatedStyle]}>
+        <View style={introStyles.iconBox}>
+          <Ionicons name="location-sharp" size={36} color={Colors.white} />
+        </View>
+        <RNText style={introStyles.brand}>rayo</RNText>
+        <Text variant="body" style={introStyles.tagline}>
+          Every space needs rayo
+        </Text>
+      </Animated.View>
+    </View>
+  );
+}
+
+const introStyles = StyleSheet.create({
+  slide: {
+    width: W,
+    flex: 1,
+    backgroundColor: Colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: Spacing.xl,
+  },
+  content: {
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  iconBox: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    backgroundColor: Colors.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.sm,
+  },
+  brand: {
+    fontFamily: FontFamily.heading,
+    fontSize: 42,
+    color: Colors.white,
+    letterSpacing: 1,
+  },
+  tagline: {
+    color: Colors.white + "CC",
+    textAlign: "center",
+  },
+});
+
+// ─── Dot indicator ─────────────────────────────────────────────────────────
 
 function DotIndicator({
   index,
@@ -165,14 +231,14 @@ function LastSlideActions({
   onGuest: () => void;
 }) {
   const isLastSlideStyle = useAnimatedStyle(() => {
-    const isLast = Math.round(scrollX.value / W) === SLIDES.length - 1;
+    const isLast = Math.round(scrollX.value / W) === TOTAL_SLIDES - 1;
     return {
       opacity: withSpring(isLast ? 1 : 0, { damping: 15 }),
       pointerEvents: isLast ? "auto" : "none",
     };
   });
   const isNotLastSlideStyle = useAnimatedStyle(() => {
-    const isNotLast = Math.round(scrollX.value / W) !== SLIDES.length - 1;
+    const isNotLast = Math.round(scrollX.value / W) !== TOTAL_SLIDES - 1;
     return {
       opacity: withSpring(isNotLast ? 1 : 0, { damping: 15 }),
       pointerEvents: isNotLast ? "auto" : "none",
