@@ -65,14 +65,17 @@ export interface Building {
   distance_km?: number;  // set client-side when user location is known
   features: string[];    // top-level features
   floors?: Floor[];      // populated in detail view
+  site_id?: string;
 }
 
 // Site (a campus/complex containing multiple buildings)
 export interface Site {
   id: string;
   name: string;
+  address: string;
+  category: string;
   building_count: number;
-  buildings?: Building[];
+  buildings: Building[];
 }
 
 // GeoJSON for map
