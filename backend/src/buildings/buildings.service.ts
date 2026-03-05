@@ -86,6 +86,21 @@ export class BuildingsService {
     };
   }
 
+  async findNearby(lat: number, lng: number) {
+    const delta = 0.02; // ~2 km bounding box
+    return this.prisma.building.findMany({
+      where: {
+        lat: { gte: lat - delta, lte: lat + delta },
+        lng: { gte: lng - delta, lte: lng + delta },
+      },
+      include: {
+        site: {
+          select: { id: true, name: true, site_type: true, address: true },
+        },
+      },
+    });
+  }
+
   async triggerPrediction(buildingId: string) {
     await this.predictService.predict(buildingId);
   }

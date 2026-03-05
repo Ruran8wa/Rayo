@@ -22,6 +22,14 @@ export class BuildingsController {
     return this.buildingsService.getGeoJson(dto.bbox);
   }
 
+  @Get('nearby')
+  @ApiOperation({ summary: 'Find buildings within ~2 km of a coordinate' })
+  @ApiQuery({ name: 'lat', type: Number, description: 'Latitude' })
+  @ApiQuery({ name: 'lng', type: Number, description: 'Longitude' })
+  findNearby(@Query('lat') lat: string, @Query('lng') lng: string) {
+    return this.buildingsService.findNearby(parseFloat(lat), parseFloat(lng));
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get building detail with floors and services' })
   findOne(@Param('id') id: string) {

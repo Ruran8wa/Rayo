@@ -118,12 +118,13 @@ export default function MapTab() {
       );
 
       // 3. Check if it exists in our database
-      const dbResults = await buildingsService.search(prediction.name);
-      const dbMatch = dbResults.find((b) => {
-        const latClose = Math.abs(b.latitude - detail.latitude) < 0.015;
-        const lngClose = Math.abs(b.longitude - detail.longitude) < 0.015;
-        return latClose && lngClose;
-      });
+      const dbResults = await buildingsService.nearby(detail.latitude, detail.longitude);
+      const dbMatch = dbResults.reduce<(typeof dbResults)[0] | null>((closest, b) => {
+        const dist = Math.hypot(b.latitude - detail.latitude, b.longitude - detail.longitude);
+        if (!closest) return b;
+        const closestDist = Math.hypot(closest.latitude - detail.latitude, closest.longitude - detail.longitude);
+        return dist < closestDist ? b : closest;
+      }, null);
 
       if (dbMatch) {
         const full = await buildingsService.getById(dbMatch.id);

@@ -110,6 +110,12 @@ export const buildingsService = {
     };
   },
 
+  async nearby(lat: number, lng: number): Promise<Building[]> {
+    const response = await apiClient.get("/buildings/nearby", { lat, lng });
+    const list = unwrap<Record<string, unknown>[]>(response.data);
+    return (list ?? []).map(mapBuilding);
+  },
+
   async search(query: string): Promise<Building[]> {
     const response = await apiClient.get("/buildings/search", { q: query });
     // API returns { data: [...buildings] }

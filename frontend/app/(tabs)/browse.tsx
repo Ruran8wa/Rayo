@@ -163,14 +163,15 @@ export default function Browse() {
     setUnverifiedPlace(null);
 
     try {
-      const dbResults = await buildingsService.search(place.name);
+      const dbResults = await buildingsService.nearby(place.latitude, place.longitude);
       if (thisSelection !== selectionId.current) return;
 
-      const dbMatch = dbResults.find((b) => {
-        const latClose = Math.abs(b.latitude - place.latitude) < 0.015;
-        const lngClose = Math.abs(b.longitude - place.longitude) < 0.015;
-        return latClose && lngClose;
-      });
+      const dbMatch = dbResults.reduce<(typeof dbResults)[0] | null>((closest, b) => {
+        const dist = Math.hypot(b.latitude - place.latitude, b.longitude - place.longitude);
+        if (!closest) return b;
+        const closestDist = Math.hypot(closest.latitude - place.latitude, closest.longitude - place.longitude);
+        return dist < closestDist ? b : closest;
+      }, null);
 
       if (dbMatch) {
         const full = await buildingsService.getById(dbMatch.id);
@@ -205,14 +206,15 @@ export default function Browse() {
       const detail = await placesService.getDetails(prediction.placeId);
       if (!detail || thisSelection !== selectionId.current) return;
 
-      const dbResults = await buildingsService.search(prediction.name);
+      const dbResults = await buildingsService.nearby(detail.latitude, detail.longitude);
       if (thisSelection !== selectionId.current) return;
 
-      const dbMatch = dbResults.find((b) => {
-        const latClose = Math.abs(b.latitude - detail.latitude) < 0.015;
-        const lngClose = Math.abs(b.longitude - detail.longitude) < 0.015;
-        return latClose && lngClose;
-      });
+      const dbMatch = dbResults.reduce<(typeof dbResults)[0] | null>((closest, b) => {
+        const dist = Math.hypot(b.latitude - detail.latitude, b.longitude - detail.longitude);
+        if (!closest) return b;
+        const closestDist = Math.hypot(closest.latitude - detail.latitude, closest.longitude - detail.longitude);
+        return dist < closestDist ? b : closest;
+      }, null);
 
       setSelectedPlace(null);
       if (dbMatch) {
