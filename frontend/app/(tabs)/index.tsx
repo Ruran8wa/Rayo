@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE, type Region } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -43,7 +43,7 @@ export default function MapTab() {
   const mapRef = useRef<MapView>(null);
   const pinPressId = useRef(0);
   const { previewBuilding, previewSite, setSelectedBuilding, setPreviewSite, clearSelection } = useMapStore();
-  const { mapSearchQuery, setMapSearch } = useFilterStore();
+  const { mapSearchQuery, setMapSearch, activeMapCategory } = useFilterStore();
 
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
@@ -76,6 +76,28 @@ export default function MapTab() {
     queryKey: ["buildings-geojson"],
     queryFn: () => buildingsService.getGeoJSON(KIGALI_BOUNDS),
   });
+
+  // Filter pins by active category chip (case-insensitive keyword match against site_type)
+  const CATEGORY_KEYWORDS: Record<string, string[]> = {
+    Health:     ["health", "hospital", "medical", "clinic", "pharmacy"],
+    Government: ["government", "gov", "municipal", "public", "ministry"],
+    Bank:       ["bank", "finance", "financial", "atm"],
+    Education:  ["education", "school", "university", "college", "institute", "academic"],
+    Commercial: ["commercial", "retail", "market", "mall", "shop", "business"],
+  };
+
+  const filteredGeojson = useMemo(() => {
+    if (!geojson) return geojson;
+    if (!activeMapCategory || activeMapCategory === "Near me") return geojson;
+    const keywords = CATEGORY_KEYWORDS[activeMapCategory] ?? [];
+    return {
+      ...geojson,
+      features: geojson.features.filter((f) => {
+        const cat = (f.properties.category ?? "").toLowerCase();
+        return keywords.some((kw) => cat.includes(kw));
+      }),
+    };
+  }, [geojson, activeMapCategory]);
 
   const handlePinPress = async (id: string) => {
     const thisPress = ++pinPressId.current;
@@ -175,8 +197,8 @@ export default function MapTab() {
         toolbarEnabled={false}
         onRegionChangeComplete={(region) => clampRegion(region, mapRef)}
       >
-        {geojson != null && (geojson.features?.length ?? 0) > 0 && (
-          <BuildingPins geojson={geojson} onPinPress={handlePinPress} />
+        {filteredGeojson != null && (filteredGeojson.features?.length ?? 0) > 0 && (
+          <BuildingPins geojson={filteredGeojson} onPinPress={handlePinPress} />
         )}
 
         {/* Gray pin for unverified Google place */}
