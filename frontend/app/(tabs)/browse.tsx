@@ -152,13 +152,46 @@ export default function Browse() {
     staleTime: 1000 * 60 * 5,
   });
 
-  // Tap a nearby card — show the simple place detail sheet
-  const handleCardPress = (place: NearbyPlace) => {
+  // Tap a nearby card — check DB first, show the right sheet
+  const handleCardPress = async (place: NearbyPlace) => {
+    const thisSelection = ++selectionId.current;
+    setSelectingPlace(true);
+    setSelectedPlace(null);
     setPreviewBuilding(null);
-    setUnverifiedPlace(null);
     setPreviewSite(null);
     setPreviewSiteName("");
-    setSelectedPlace(place);
+    setUnverifiedPlace(null);
+
+    try {
+      const dbResults = await buildingsService.search(place.name);
+      if (thisSelection !== selectionId.current) return;
+
+      const dbMatch = dbResults.find((b) => {
+        const latClose = Math.abs(b.latitude - place.latitude) < 0.015;
+        const lngClose = Math.abs(b.longitude - place.longitude) < 0.015;
+        return latClose && lngClose;
+      });
+
+      if (dbMatch) {
+        const full = await buildingsService.getById(dbMatch.id);
+        if (thisSelection !== selectionId.current) return;
+        if (full.site_id) {
+          const site = await sitesService.getById(full.site_id);
+          if (thisSelection !== selectionId.current) return;
+          setPreviewSiteName(site.name);
+          setPreviewSite(site);
+        } else {
+          setPreviewBuilding(full);
+        }
+      } else {
+        setSelectedPlace(place); // not in our system — show "be first to review" sheet
+      }
+    } catch (error) {
+      console.error("Failed to resolve nearby place:", error);
+      setSelectedPlace(place); // fallback to simple sheet on error
+    } finally {
+      if (thisSelection === selectionId.current) setSelectingPlace(false);
+    }
   };
 
   // Tap an autocomplete prediction — check DB, show the right sheet
