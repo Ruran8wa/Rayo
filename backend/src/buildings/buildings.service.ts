@@ -87,7 +87,7 @@ export class BuildingsService {
   }
 
   async findNearby(lat: number, lng: number) {
-    const delta = 0.02; // ~2 km bounding box
+    const delta = 0.05; // ~5.5 km bounding box
     return this.prisma.building.findMany({
       where: {
         lat: { gte: lat - delta, lte: lat + delta },

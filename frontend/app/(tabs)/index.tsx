@@ -50,6 +50,7 @@ export default function MapTab() {
   const [predictionsLoading, setPredictionsLoading] = useState(false);
   const [unverifiedPlace, setUnverifiedPlace] = useState<PlaceDetail | null>(null);
   const [selectingPlace, setSelectingPlace] = useState(false);
+  const [pinLoading, setPinLoading] = useState(false);
   const [previewSiteName, setPreviewSiteName] = useState("");
 
   // Debounce search input
@@ -101,6 +102,7 @@ export default function MapTab() {
 
   const handlePinPress = async (id: string) => {
     const thisPress = ++pinPressId.current;
+    setPinLoading(true);
     try {
       const building = await buildingsService.getById(id);
       if (thisPress !== pinPressId.current) return;
@@ -115,6 +117,8 @@ export default function MapTab() {
       }
     } catch (error) {
       console.error("Failed to load building:", error);
+    } finally {
+      if (thisPress === pinPressId.current) setPinLoading(false);
     }
   };
 
@@ -258,10 +262,27 @@ export default function MapTab() {
           </View>
         )}
 
-        {/* Loading spinner while selecting */}
+        {/* Loading spinner while selecting from autocomplete */}
         {predictionsLoading && debouncedQuery.length > 1 && predictions.length === 0 && (
           <View style={styles.loadingRow}>
             <ActivityIndicator size="small" color={Colors.primary} />
+          </View>
+        )}
+
+        {/* Loading spinner while a pin is loading */}
+        {(pinLoading || selectingPlace) && (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator size="small" color={Colors.primary} />
+          </View>
+        )}
+
+        {/* Empty state when active category filter has no buildings */}
+        {activeMapCategory && activeMapCategory !== "Near me" &&
+          filteredGeojson != null && (filteredGeojson.features?.length ?? 0) === 0 && (
+          <View style={styles.loadingRow}>
+            <Text variant="caption" color={Colors.textSecondary}>
+              No {activeMapCategory.toLowerCase()} buildings in the database yet
+            </Text>
           </View>
         )}
       </View>
