@@ -29,6 +29,12 @@ export class UsersController {
     return this.usersService.listUsers();
   }
 
+  @Get('badges')
+  @ApiOperation({ summary: 'Get all badges with earned status and progress' })
+  getBadges(@CurrentUser() user: AuthUser) {
+    return this.usersService.getBadges(user.userId);
+  }
+
   @Get('preferences')
   @ApiOperation({ summary: 'Get user disability preferences' })
   getPreferences(@CurrentUser() user: AuthUser) {

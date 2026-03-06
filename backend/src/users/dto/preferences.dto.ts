@@ -1,18 +1,19 @@
-import { IsString, IsNotEmpty, IsObject } from 'class-validator';
+import { IsString, IsObject, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class PreferencesDto {
   @ApiProperty({
     description: 'Type of disability',
     example: 'mobility',
+    required: false,
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  disability_type: string;
+  disability_type?: string;
 
   @ApiProperty({
     description: 'Detailed preference settings',
-    example: { wheelchair: true, visual_aid: false },
+    example: { wheelchair: true, large_text: false },
   })
   @IsObject()
   preferences: Record<string, unknown>;

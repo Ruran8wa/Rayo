@@ -9,6 +9,7 @@ import { Prisma } from '@prisma/client';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../prisma/prisma.service';
 import { PreferencesDto } from './dto/preferences.dto';
+import { BadgesService } from '../badges/badges.service';
 
 @Injectable()
 export class UsersService {
@@ -17,12 +18,17 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    private readonly badgesService: BadgesService,
   ) {
     const url = this.configService.getOrThrow<string>('SUPABASE_URL');
     const serviceKey = this.configService.getOrThrow<string>('SUPABASE_API_SECRET');
     this.adminClient = createClient(url, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+  }
+
+  async getBadges(userId: string) {
+    return this.badgesService.getUserBadges(userId);
   }
 
   async listUsers() {
@@ -46,16 +52,28 @@ export class UsersService {
   }
 
   async upsertPreferences(userId: string, dto: PreferencesDto) {
+    const existing = await this.prisma.userPreference.findUnique({
+      where: { user_id: userId },
+    });
+
+    const disability_type =
+      dto.disability_type ?? existing?.disability_type ?? '';
+
+    const mergedPreferences = {
+      ...(existing?.preferences as Record<string, unknown> | null ?? {}),
+      ...dto.preferences,
+    };
+
     return this.prisma.userPreference.upsert({
       where: { user_id: userId },
       update: {
-        disability_type: dto.disability_type,
-        preferences: dto.preferences as Prisma.InputJsonValue,
+        ...(dto.disability_type !== undefined && { disability_type }),
+        preferences: mergedPreferences as Prisma.InputJsonValue,
       },
       create: {
         user_id: userId,
-        disability_type: dto.disability_type,
-        preferences: dto.preferences as Prisma.InputJsonValue,
+        disability_type,
+        preferences: mergedPreferences as Prisma.InputJsonValue,
       },
     });
   }
