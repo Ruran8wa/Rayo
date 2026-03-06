@@ -1,6 +1,8 @@
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { useAuth } from "@/contexts";
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,7 +16,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "@components/ui/button";
 import { Text } from "@components/ui/text";
 import { BorderRadius, Colors, FontFamily, FontSize, Shadow, Spacing } from "@constants/theme";
-import type { AccessibilityLevel } from "@/types";
+import { buildingsService } from "@services/api/buildings.service";
+import { reviewsService } from "@services/api/reviews.service";
+import type { AccessibilityLevel, Building } from "@/types";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -26,7 +30,7 @@ const SCOPES: { value: Scope; label: string; sub: string }[] = [
   { value: "service", label: "Specific service", sub: "Rate one service" },
 ];
 
-const LEVELS: { value: AccessibilityLevel; label: string; color: string }[] = [
+const LEVELS: { value: "fully" | "partial" | "none"; label: string; color: string }[] = [
   { value: "fully", label: "Fully\nAccessible", color: Colors.fullyAccessible },
   { value: "partial", label: "Partially\nAccessible", color: Colors.partiallyAccessible },
   { value: "none", label: "Not\nAccessible", color: Colors.notAccessible },
@@ -34,18 +38,82 @@ const LEVELS: { value: AccessibilityLevel; label: string; color: string }[] = [
 
 export default function WriteReview() {
   const router = useRouter();
+  const { user, loading } = useAuth();
+
+  // Route params — set when coming from a building/unverified place
+  const params = useLocalSearchParams<{
+    buildingId?: string;
+    buildingName?: string;
+    placeName?: string;
+    placeAddress?: string;
+  }>();
+
+  // Building picker state (used when no context is passed)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Building[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
+
+  // Review form state
   const [scope, setScope] = useState<Scope>("building");
-  const [level, setLevel] = useState<AccessibilityLevel | null>(null);
+  const [level, setLevel] = useState<"fully" | "partial" | "none" | null>(null);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Determine resolved building context from params
+  const resolvedBuildingId = params.buildingId ?? selectedBuilding?.id;
+  const resolvedBuildingName =
+    params.buildingName ?? selectedBuilding?.name ?? params.placeName ?? null;
+
+  // Whether the user needs to pick a building first
+  const needsBuildingPick = !params.buildingId && !params.placeName && !selectedBuilding;
+
+  // Hard guard — redirect unauthenticated users to sign-in
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace("/(auth)/sign-in");
+    }
+  }, [user, loading]);
+
+  // Debounced building search
+  useEffect(() => {
+    if (searchQuery.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    setSearchLoading(true);
+    const timer = setTimeout(() => {
+      buildingsService
+        .search(searchQuery.trim())
+        .then(setSearchResults)
+        .catch(() => setSearchResults([]))
+        .finally(() => setSearchLoading(false));
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const handleSubmit = async () => {
     if (!level) return;
+    if (needsBuildingPick) return;
+
     setSubmitting(true);
-    // TODO: call review API when endpoint is available
-    await new Promise((r) => setTimeout(r, 1000));
-    setSubmitting(false);
-    router.back();
+    setError(null);
+    try {
+      await reviewsService.create({
+        building_id: resolvedBuildingId,
+        place_name: !resolvedBuildingId ? (params.placeName ?? undefined) : undefined,
+        place_address: !resolvedBuildingId ? (params.placeAddress ?? undefined) : undefined,
+        scope,
+        accessibility_level: level,
+        comment: comment.trim() || undefined,
+      });
+      router.back();
+    } catch {
+      setError("Failed to submit review. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -67,75 +135,132 @@ export default function WriteReview() {
             Help others know what to expect
           </Text>
 
-          {/* Scope */}
-          <Text
-            variant="label"
-            semiBold
-            color={Colors.textSecondary}
-            style={styles.sectionLabel}
-          >
-            WHAT ARE YOU REVIEWING?
-          </Text>
-          <View accessibilityRole="radiogroup" accessibilityLabel="What are you reviewing?">
-            {SCOPES.map((s) => (
-              <ScopeOption
-                key={s.value}
-                item={s}
-                selected={scope === s.value}
-                onSelect={() => setScope(s.value)}
+          {/* Building context indicator or picker */}
+          {resolvedBuildingName ? (
+            <View style={styles.buildingBadge}>
+              <Text variant="bodySm" semiBold numberOfLines={1}>{resolvedBuildingName}</Text>
+              {!params.buildingId && !params.placeName && (
+                <Pressable onPress={() => setSelectedBuilding(null)}>
+                  <Text variant="caption" color={Colors.textSecondary}> Change</Text>
+                </Pressable>
+              )}
+            </View>
+          ) : (
+            <View style={styles.pickerSection}>
+              <Text variant="label" semiBold color={Colors.textSecondary} style={styles.sectionLabel}>
+                WHICH BUILDING?
+              </Text>
+              <TextInput
+                style={styles.searchInput}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder="Search by building name..."
+                placeholderTextColor={Colors.textSecondary}
+                returnKeyType="search"
+                accessibilityLabel="Search for a building"
               />
-            ))}
-          </View>
+              {searchLoading && (
+                <ActivityIndicator color={Colors.primary} style={styles.searchLoader} size="small" />
+              )}
+              {searchResults.map((b) => (
+                <Pressable
+                  key={b.id}
+                  style={styles.resultRow}
+                  onPress={() => {
+                    setSelectedBuilding(b);
+                    setSearchQuery("");
+                    setSearchResults([]);
+                  }}
+                >
+                  <Text variant="bodySm" semiBold numberOfLines={1}>{b.name}</Text>
+                  {!!b.address && (
+                    <Text variant="caption" color={Colors.textSecondary} numberOfLines={1}>{b.address}</Text>
+                  )}
+                </Pressable>
+              ))}
+            </View>
+          )}
 
-          {/* Accessibility level */}
-          <Text
-            variant="label"
-            semiBold
-            color={Colors.textSecondary}
-            style={styles.sectionLabel}
-          >
-            ACCESSIBILITY CLASS
-          </Text>
-          <View style={styles.levelRow}>
-            {LEVELS.map((l) => (
-              <LevelCard
-                key={l.value}
-                item={l}
-                selected={level === l.value}
-                onSelect={() => setLevel(l.value)}
+          {/* Only show the form once a building context is resolved */}
+          {!needsBuildingPick && (
+            <>
+              {/* Scope */}
+              <Text
+                variant="label"
+                semiBold
+                color={Colors.textSecondary}
+                style={styles.sectionLabel}
+              >
+                WHAT ARE YOU REVIEWING?
+              </Text>
+              <View accessibilityRole="radiogroup" accessibilityLabel="What are you reviewing?">
+                {SCOPES.map((s) => (
+                  <ScopeOption
+                    key={s.value}
+                    item={s}
+                    selected={scope === s.value}
+                    onSelect={() => setScope(s.value)}
+                  />
+                ))}
+              </View>
+
+              {/* Accessibility level */}
+              <Text
+                variant="label"
+                semiBold
+                color={Colors.textSecondary}
+                style={styles.sectionLabel}
+              >
+                ACCESSIBILITY CLASS
+              </Text>
+              <View style={styles.levelRow}>
+                {LEVELS.map((l) => (
+                  <LevelCard
+                    key={l.value}
+                    item={l}
+                    selected={level === l.value}
+                    onSelect={() => setLevel(l.value)}
+                  />
+                ))}
+              </View>
+
+              {/* Comment */}
+              <Text
+                variant="label"
+                semiBold
+                color={Colors.textSecondary}
+                style={styles.sectionLabel}
+              >
+                YOUR COMMENT
+              </Text>
+              <TextInput
+                style={styles.commentInput}
+                value={comment}
+                onChangeText={setComment}
+                placeholder="The ramp at the entrance works great, but the restrooms on this floor..."
+                placeholderTextColor={Colors.textSecondary}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+                accessibilityLabel="Your comment"
               />
-            ))}
-          </View>
 
-          {/* Comment */}
-          <Text
-            variant="label"
-            semiBold
-            color={Colors.textSecondary}
-            style={styles.sectionLabel}
-          >
-            YOUR COMMENT
-          </Text>
-          <TextInput
-            style={styles.commentInput}
-            value={comment}
-            onChangeText={setComment}
-            placeholder="The ramp at the entrance works great, but the restrooms on this floor..."
-            placeholderTextColor={Colors.textSecondary}
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-            accessibilityLabel="Your comment"
-          />
+              {error && (
+                <Text variant="caption" color={Colors.notAccessible} style={styles.errorText}>
+                  {error}
+                </Text>
+              )}
 
-          <Button
-            label="Submit Review"
-            onPress={handleSubmit}
-            loading={submitting}
-            disabled={!level}
-            fullWidth
-            style={styles.submitBtn}
-          />
+              <Button
+                label="Submit Review"
+                onPress={handleSubmit}
+                loading={submitting}
+                disabled={!level}
+                fullWidth
+                style={styles.submitBtn}
+              />
+            </>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -156,12 +281,8 @@ function ScopeOption({
   return (
     <AnimatedPressable
       style={[styles.scopeOption, selected && styles.scopeSelected, animStyle]}
-      onPressIn={() => {
-        scale.value = withSpring(0.97, { damping: 15 });
-      }}
-      onPressOut={() => {
-        scale.value = withSpring(1, { damping: 15 });
-      }}
+      onPressIn={() => { scale.value = withSpring(0.97, { damping: 15 }); }}
+      onPressOut={() => { scale.value = withSpring(1, { damping: 15 }); }}
       onPress={onSelect}
       accessibilityRole="radio"
       accessibilityLabel={`${item.label}: ${item.sub}`}
@@ -195,12 +316,8 @@ function LevelCard({
         selected && { backgroundColor: item.color + "15" },
         animStyle,
       ]}
-      onPressIn={() => {
-        scale.value = withSpring(0.95, { damping: 15 });
-      }}
-      onPressOut={() => {
-        scale.value = withSpring(1, { damping: 15 });
-      }}
+      onPressIn={() => { scale.value = withSpring(0.95, { damping: 15 }); }}
+      onPressOut={() => { scale.value = withSpring(1, { damping: 15 }); }}
       onPress={onSelect}
       accessibilityRole="button"
       accessibilityLabel={item.label.replace('\n', ' ')}
@@ -220,6 +337,39 @@ const styles = StyleSheet.create({
   back: { marginBottom: Spacing.xxl },
   heading: { marginBottom: Spacing.sm },
   sub: { marginBottom: Spacing.xl },
+  buildingBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.md,
+    marginBottom: Spacing.base,
+    gap: Spacing.sm,
+  },
+  pickerSection: { marginBottom: Spacing.base },
+  searchInput: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    padding: Spacing.base,
+    fontFamily: FontFamily.body,
+    fontSize: FontSize.body,
+    color: Colors.textPrimary,
+  },
+  searchLoader: { marginTop: Spacing.sm },
+  resultRow: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.base,
+    marginTop: Spacing.xs,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: 2,
+  },
   sectionLabel: {
     letterSpacing: 0.8,
     marginBottom: Spacing.md,
@@ -268,5 +418,6 @@ const styles = StyleSheet.create({
     fontSize: FontSize.body,
     color: Colors.textPrimary,
   },
+  errorText: { marginTop: Spacing.sm },
   submitBtn: { marginTop: Spacing.xl },
 });

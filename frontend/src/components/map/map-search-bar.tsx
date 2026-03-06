@@ -3,10 +3,11 @@ import React from "react";
 import {
   Pressable,
   StyleSheet,
+  Text,
   TextInput,
   View,
 } from "react-native";
-import { BorderRadius, Colors, FontSize, Shadow, Spacing } from "@constants/theme";
+import { BorderRadius, Colors, FontFamily, FontSize, Shadow, Spacing } from "@constants/theme";
 import { useFilterStore } from "@stores/filter.store";
 
 export function MapSearchBar() {
@@ -14,7 +15,11 @@ export function MapSearchBar() {
 
   return (
     <View style={styles.container}>
-      <Ionicons name="search" size={18} color={Colors.textSecondary} />
+      {/* Brand mark */}
+      <Text style={styles.brand}>rayo</Text>
+      <View style={styles.divider} />
+
+      <Ionicons name="search" size={16} color={Colors.textSecondary} />
       <TextInput
         style={styles.input}
         value={mapSearchQuery}
@@ -41,6 +46,17 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     gap: Spacing.sm,
     ...Shadow.card,
+  },
+  brand: {
+    fontFamily: FontFamily.heading,
+    fontSize: 15,
+    color: Colors.primary,
+    letterSpacing: 0.3,
+  },
+  divider: {
+    width: 1,
+    height: 16,
+    backgroundColor: Colors.border,
   },
   input: {
     flex: 1,

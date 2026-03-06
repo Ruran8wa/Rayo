@@ -137,14 +137,17 @@ export const placesService = {
 
   /**
    * Nearby Search using Google Places.
-   * category = "Health" | "Government" | "Bank" | "Education" | undefined (= all public services)
+   * categories = active category filters; empty/undefined = search all public service types.
    */
   async nearbySearch(
     lat: number,
     lng: number,
-    category?: string
+    categories?: string[]
   ): Promise<NearbyPlace[]> {
-    const types = category ? (CATEGORY_TYPES[category] ?? DEFAULT_TYPES) : DEFAULT_TYPES;
+    const types =
+      categories && categories.length > 0
+        ? [...new Set(categories.flatMap((c) => CATEGORY_TYPES[c] ?? []))]
+        : DEFAULT_TYPES;
 
     // Run all type searches in parallel, merge & deduplicate by placeId
     const arrays = await Promise.all(types.map((t) => searchByType(lat, lng, t)));

@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
+import { useRequireAuth } from "@hooks/use-require-auth";
 import { StyleSheet, View } from "react-native";
 import { Button } from "@components/ui/button";
 import { SimpleSheet } from "@components/ui/simple-sheet";
@@ -15,6 +16,7 @@ interface Props {
 
 export function UnverifiedPlaceSheet({ place, onClose }: Props) {
   const router = useRouter();
+  const withAuth = useRequireAuth();
 
   return (
     <SimpleSheet visible={place != null} onClose={onClose}>
@@ -44,10 +46,18 @@ export function UnverifiedPlaceSheet({ place, onClose }: Props) {
 
           <Button
             label="Write the first review"
-            onPress={() => {
-              onClose();
-              router.push("/review/new");
-            }}
+            onPress={() =>
+              withAuth(() => {
+                onClose();
+                router.push({
+                  pathname: "/review/new",
+                  params: {
+                    placeName: place.name,
+                    placeAddress: place.address,
+                  },
+                });
+              })
+            }
             fullWidth
             style={styles.btn}
           />

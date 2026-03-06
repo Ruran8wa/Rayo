@@ -463,7 +463,13 @@ function PlaceDetailSheet({
           onPress={() =>
             withAuth(() => {
               onClose();
-              router.push("/review/new");
+              router.push({
+                pathname: "/review/new",
+                params: {
+                  placeName: place.name,
+                  placeAddress: place.address,
+                },
+              });
             })
           }
           fullWidth
