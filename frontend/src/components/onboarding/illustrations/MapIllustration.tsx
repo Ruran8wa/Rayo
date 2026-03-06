@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, ViewStyle } from "react-native";
 
 const CELL = 72;
 const GAP = 6;
@@ -28,7 +28,7 @@ export function MapIllustration() {
   );
 }
 
-function Pin({ color, style }: { color: string; style: object }) {
+function Pin({ color, style }: { color: string; style: ViewStyle }) {
   return (
     <View style={[styles.pinWrapper, style]}>
       <View style={[styles.pinDot, { backgroundColor: color }]} />
@@ -40,7 +40,6 @@ const styles = StyleSheet.create({
   container: {
     width: CELL * 2 + GAP,
     height: CELL * 2 + GAP,
-    position: "relative",
   },
   grid: {
     flexDirection: "row",
@@ -71,7 +70,6 @@ const styles = StyleSheet.create({
   },
   pinWrapper: {
     position: "absolute",
-    alignItems: "center",
   },
   pinDot: {
     width: PIN_SIZE,
