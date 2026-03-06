@@ -1,13 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { BadgesService } from '../badges/badges.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 
 @Injectable()
 export class ReviewsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(ReviewsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly badgesService: BadgesService,
+  ) {}
 
   async create(userId: string, dto: CreateReviewDto) {
-    return this.prisma.review.create({
+    const review = await this.prisma.review.create({
       data: {
         user_id: userId,
         building_id: dto.building_id ?? null,
@@ -18,6 +24,13 @@ export class ReviewsService {
         comment: dto.comment ?? null,
       },
     });
+
+    // Fire-and-forget badge evaluation
+    this.badgesService.evaluate(userId).catch((err: Error) => {
+      this.logger.error(`Badge evaluation failed for ${userId}: ${err.message}`);
+    });
+
+    return review;
   }
 
   async findByBuilding(buildingId: string) {

@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   ConflictException,
   InternalServerErrorException,
@@ -13,6 +14,7 @@ import { BadgesService } from '../badges/badges.service';
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
   private adminClient: SupabaseClient;
 
   constructor(
@@ -101,8 +103,9 @@ export class UsersService {
       throw new NotFoundException(`Building ${buildingId} not found`);
     }
 
+    let savedPlace;
     try {
-      return await this.prisma.savedPlace.create({
+      savedPlace = await this.prisma.savedPlace.create({
         data: { user_id: userId, building_id: buildingId },
         include: {
           building: {
@@ -123,6 +126,13 @@ export class UsersService {
       }
       throw error;
     }
+
+    // Fire-and-forget badge evaluation
+    this.badgesService.evaluate(userId).catch((err: Error) => {
+      this.logger.error(`Badge evaluation failed for ${userId}: ${err.message}`);
+    });
+
+    return savedPlace;
   }
 
   async removePlace(userId: string, id: string) {
