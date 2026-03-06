@@ -115,3 +115,14 @@ model SavedPlace {
   @@index([user_id])
   @@map("saved_places")
 }
+
+model UserBadge {
+  id        String   @id @default(uuid())
+  user_id   String
+  badge_id  String
+  earned_at DateTime @default(now())
+
+  @@unique([user_id, badge_id])
+  @@index([user_id])
+  @@map("user_badges")
+}
