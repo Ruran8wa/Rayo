@@ -113,7 +113,7 @@ export class BadgesService {
             select: { building: { select: { site_id: true } } },
             distinct: ['building_id'],
           })
-          .then((rows) => new Set(rows.map((r) => r.building?.site_id)).size),
+          .then((rows) => new Set(rows.map((r) => r.building?.site_id).filter(Boolean)).size),
         this.prisma.userBadge.findMany({
           where: { user_id: userId },
           select: { badge_id: true },
@@ -168,7 +168,7 @@ export class BadgesService {
             select: { building: { select: { site_id: true } } },
             distinct: ['building_id'],
           })
-          .then((rows) => new Set(rows.map((r) => r.building?.site_id)).size),
+          .then((rows) => new Set(rows.map((r) => r.building?.site_id).filter(Boolean)).size),
       ]);
 
     const counts: BadgeCounts = {
