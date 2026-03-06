@@ -1,6 +1,5 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   Dimensions,
   NativeScrollEvent,
@@ -11,54 +10,56 @@ import {
   Text as RNText,
   View,
 } from "react-native";
-import Animated, {
-  SharedValue,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from "react-native-reanimated";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { OnboardingSlide } from "@components/onboarding/slide";
+import { MapIllustration } from "@components/onboarding/illustrations/MapIllustration";
+import { FloorIllustration } from "@components/onboarding/illustrations/FloorIllustration";
+import { ReviewIllustration } from "@components/onboarding/illustrations/ReviewIllustration";
 import { Button } from "@components/ui/button";
-import { Text } from "@components/ui/text";
-import { Colors, FontFamily, Spacing } from "@constants/theme";
+import { Colors, FontFamily, FontSize, Spacing } from "@constants/theme";
 import { storage } from "@utils/storage";
 
 const { width: W } = Dimensions.get("window");
 
-// Feature slides — rendered at indices 1, 2, 3 (index 0 is the intro)
-const FEATURE_SLIDES = [
+const SLIDES = [
   {
+    stepNumber: "01",
     title: "Find accessible spaces near you",
-    subtitle: "Discover buildings that are fully, partially, or not accessible — all in one map.",
+    subtitle:
+      "See which public buildings are fully, partially, or not accessible — all on a live map.",
+    Illustration: MapIllustration,
   },
   {
+    stepNumber: "02",
     title: "Explore every floor & service",
-    subtitle: "See which rooms on each floor are accessible to you before you arrive.",
+    subtitle:
+      "Drill into any building to see which services on each floor are accessible to you.",
+    Illustration: FloorIllustration,
   },
   {
+    stepNumber: "03",
     title: "Share your experience",
-    subtitle: "Help the community by reviewing the accessibility of places you've visited.",
+    subtitle:
+      "Help the community by reviewing the accessibility of places you've visited.",
+    Illustration: ReviewIllustration,
   },
 ];
 
-const TOTAL_SLIDES = FEATURE_SLIDES.length + 1; // intro + 3 feature slides
+const TOTAL = SLIDES.length;
 
 export default function Onboarding() {
   const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
-  const scrollX = useSharedValue(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    scrollX.value = e.nativeEvent.contentOffset.x;
+    const idx = Math.round(e.nativeEvent.contentOffset.x / W);
+    setCurrentIndex(idx);
   };
 
-  const handleContinue = () => {
-    const next = Math.round(scrollX.value / W) + 1;
-    if (next < TOTAL_SLIDES) {
+  const handleContinue = (fromIndex: number) => {
+    const next = fromIndex + 1;
+    if (next < TOTAL) {
       scrollRef.current?.scrollTo({ x: next * W, animated: true });
-    } else {
-      completeOnboarding();
     }
   };
 
@@ -73,199 +74,131 @@ export default function Onboarding() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Skip */}
-      <View style={styles.header}>
-        <Pressable onPress={completeOnboarding}>
-          <Text variant="label" color={Colors.textSecondary}>Skip</Text>
-        </Pressable>
-      </View>
-
-      {/* Slides */}
-      <ScrollView
-        ref={scrollRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        style={styles.scroll}
-      >
-        {/* Slide 0 — branded intro */}
-        <IntroSlide scrollX={scrollX} />
-
-        {/* Slides 1-3 — feature slides */}
-        {FEATURE_SLIDES.map((slide, i) => (
+    <ScrollView
+      ref={scrollRef}
+      horizontal
+      pagingEnabled
+      showsHorizontalScrollIndicator={false}
+      onScroll={handleScroll}
+      scrollEventThrottle={16}
+      style={styles.scroll}
+    >
+      {SLIDES.map((slide, i) => {
+        const { stepNumber, title, subtitle, Illustration } = slide;
+        const isLast = i === TOTAL - 1;
+        return (
           <OnboardingSlide
             key={i}
-            index={i + 1}
-            title={slide.title}
-            subtitle={slide.subtitle}
-            scrollX={scrollX}
-          >
-            <Ionicons
-              name={(["map", "layers", "star"] as const)[i]}
-              size={64}
-              color={Colors.white}
-            />
-          </OnboardingSlide>
-        ))}
-      </ScrollView>
-
-      {/* Dots */}
-      <View style={styles.dots}>
-        {Array.from({ length: TOTAL_SLIDES }).map((_, i) => (
-          <DotIndicator key={i} index={i} scrollX={scrollX} />
-        ))}
-      </View>
-
-      {/* CTAs */}
-      <View style={styles.footer}>
-        <LastSlideActions
-          scrollX={scrollX}
-          onContinue={handleContinue}
-          onCreateAccount={goToAuth}
-          onGuest={completeOnboarding}
-        />
-      </View>
-    </SafeAreaView>
+            stepNumber={stepNumber}
+            title={title}
+            subtitle={subtitle}
+            illustration={<Illustration />}
+            footer={
+              <SlideFooter
+                total={TOTAL}
+                activeIndex={currentIndex}
+                slideIndex={i}
+                isLast={isLast}
+                onContinue={() => handleContinue(i)}
+                onCreateAccount={goToAuth}
+                onSkip={completeOnboarding}
+              />
+            }
+          />
+        );
+      })}
+    </ScrollView>
   );
 }
 
-// ─── Slide 0: branded intro ────────────────────────────────────────────────
+interface SlideFooterProps {
+  total: number;
+  activeIndex: number;
+  slideIndex: number;
+  isLast: boolean;
+  onContinue: () => void;
+  onCreateAccount: () => void;
+  onSkip: () => void;
+}
 
-function IntroSlide({ scrollX }: { scrollX: SharedValue<number> }) {
-  const animatedStyle = useAnimatedStyle(() => {
-    const opacity = 1 - Math.abs(scrollX.value / W);
-    return { opacity };
-  });
+function SlideFooter({
+  total,
+  activeIndex,
+  slideIndex,
+  isLast,
+  onContinue,
+  onCreateAccount,
+  onSkip,
+}: SlideFooterProps) {
+  const isVisible = activeIndex === slideIndex;
+
   return (
-    <View style={introStyles.slide}>
-      <Animated.View style={[introStyles.content, animatedStyle]}>
-        <View style={introStyles.iconBox}>
-          <Ionicons name="location-sharp" size={36} color={Colors.white} />
-        </View>
-        <RNText style={introStyles.brand}>rayo</RNText>
-        <Text variant="body" style={introStyles.tagline}>
-          Every space needs rayo
-        </Text>
-      </Animated.View>
+    <View style={footerStyles.container} pointerEvents={isVisible ? "auto" : "none"}>
+      {/* Progress dots */}
+      <View style={footerStyles.dots}>
+        {Array.from({ length: total }).map((_, di) => (
+          <View
+            key={di}
+            style={[
+              footerStyles.dot,
+              di === activeIndex ? footerStyles.dotActive : footerStyles.dotInactive,
+            ]}
+          />
+        ))}
+      </View>
+
+      {isLast ? (
+        <>
+          <Button label="Create an account" onPress={onCreateAccount} fullWidth />
+          <Pressable onPress={onSkip} style={footerStyles.ghost}>
+            <RNText style={footerStyles.ghostText}>Continue as guest</RNText>
+          </Pressable>
+        </>
+      ) : (
+        <>
+          <Button label="Continue" onPress={onContinue} fullWidth />
+          <Pressable onPress={onSkip} style={footerStyles.ghost}>
+            <RNText style={footerStyles.ghostText}>Skip for now</RNText>
+          </Pressable>
+        </>
+      )}
     </View>
   );
 }
 
-const introStyles = StyleSheet.create({
-  slide: {
-    width: W,
-    flex: 1,
-    backgroundColor: Colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: Spacing.xl,
-  },
-  content: {
-    alignItems: "center",
+const footerStyles = StyleSheet.create({
+  container: {
     gap: Spacing.md,
   },
-  iconBox: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    backgroundColor: Colors.primaryLight,
-    alignItems: "center",
+  dots: {
+    flexDirection: "row",
     justifyContent: "center",
-    marginBottom: Spacing.sm,
+    gap: 6,
+    marginBottom: Spacing.md,
   },
-  brand: {
-    fontFamily: FontFamily.heading,
-    fontSize: 42,
-    color: Colors.white,
-    letterSpacing: 1,
+  dot: {
+    height: 6,
+    borderRadius: 3,
   },
-  tagline: {
-    color: Colors.white + "CC",
-    textAlign: "center",
+  dotActive: {
+    width: 22,
+    backgroundColor: Colors.primary,
+  },
+  dotInactive: {
+    width: 6,
+    backgroundColor: Colors.primary + "33",
+  },
+  ghost: {
+    alignItems: "center",
+    paddingVertical: Spacing.sm,
+  },
+  ghostText: {
+    fontFamily: FontFamily.body,
+    fontSize: FontSize.body,
+    color: Colors.textSecondary,
   },
 });
 
-// ─── Dot indicator ─────────────────────────────────────────────────────────
-
-function DotIndicator({
-  index,
-  scrollX,
-}: {
-  index: number;
-  scrollX: SharedValue<number>;
-}) {
-  const style = useAnimatedStyle(() => {
-    const active = Math.round(scrollX.value / W) === index;
-    return {
-      width: withSpring(active ? 24 : 8, { damping: 15 }),
-      opacity: withSpring(active ? 1 : 0.3, { damping: 15 }),
-    };
-  });
-  return (
-    <Animated.View
-      style={[
-        {
-          height: 8,
-          borderRadius: 4,
-          backgroundColor: Colors.primary,
-          marginHorizontal: 3,
-        },
-        style,
-      ]}
-    />
-  );
-}
-
-function LastSlideActions({
-  scrollX,
-  onContinue,
-  onCreateAccount,
-  onGuest,
-}: {
-  scrollX: SharedValue<number>;
-  onContinue: () => void;
-  onCreateAccount: () => void;
-  onGuest: () => void;
-}) {
-  const isLastSlideStyle = useAnimatedStyle(() => {
-    const isLast = Math.round(scrollX.value / W) === TOTAL_SLIDES - 1;
-    return {
-      opacity: withSpring(isLast ? 1 : 0, { damping: 15 }),
-      pointerEvents: isLast ? "auto" : "none",
-    };
-  });
-  const isNotLastSlideStyle = useAnimatedStyle(() => {
-    const isNotLast = Math.round(scrollX.value / W) !== TOTAL_SLIDES - 1;
-    return {
-      opacity: withSpring(isNotLast ? 1 : 0, { damping: 15 }),
-      pointerEvents: isNotLast ? "auto" : "none",
-    };
-  });
-
-  return (
-    <>
-      <Animated.View style={[styles.actions, isNotLastSlideStyle]}>
-        <Button label="Continue" onPress={onContinue} fullWidth />
-      </Animated.View>
-      <Animated.View style={[styles.actions, isLastSlideStyle]}>
-        <Button label="Create an account" onPress={onCreateAccount} fullWidth />
-        <Pressable onPress={onGuest} style={styles.guestLink}>
-          <Text variant="label" color={Colors.textSecondary}>Continue as guest</Text>
-        </Pressable>
-      </Animated.View>
-    </>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  header: { paddingHorizontal: Spacing.xl, paddingVertical: Spacing.base, alignItems: "flex-end" },
   scroll: { flex: 1 },
-  dots: { flexDirection: "row", justifyContent: "center", paddingVertical: Spacing.lg },
-  footer: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xl },
-  actions: { gap: Spacing.md },
-  guestLink: { alignItems: "center", paddingVertical: Spacing.sm },
 });
