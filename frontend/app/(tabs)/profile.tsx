@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -16,11 +16,16 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { AllBadgesSheet } from "@components/badges/AllBadgesSheet";
+import { BadgeEarnedModal } from "@components/badges/BadgeEarnedModal";
 import { Button } from "@components/ui/button";
 import { Text } from "@components/ui/text";
+import { BadgeStrip } from "@components/review/badge-strip";
 import { BorderRadius, Colors, Shadow, Spacing } from "@constants/theme";
 import { useAuth } from "@contexts/AuthContext";
+import { useTextSize } from "@contexts/TextSizeContext";
 import { userService } from "@services/api/user.service";
+import type { Badge } from "@/types";
 
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
@@ -34,9 +39,11 @@ export default function ProfileTab() {
   const { user, signOut } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  // TODO: persist largeText preference via userService.updateProfile when endpoint is available
-  const [largeText, setLargeText] = useState(false);
+  const { largeText, setLargeText } = useTextSize();
   const [selectedNeeds, setSelectedNeeds] = useState<string[]>([]);
+  const [badges, setBadges] = useState<Badge[]>([]);
+  const [earnedModal, setEarnedModal] = useState<Badge | null>(null);
+  const [showAllBadges, setShowAllBadges] = useState(false);
 
   useEffect(() => {
     if (user?.disability_type) {
@@ -45,6 +52,32 @@ export default function ProfileTab() {
       setSelectedNeeds([]);
     }
   }, [user?.disability_type]);
+
+  // Sync large_text from backend on mount (handles multi-device consistency)
+  useEffect(() => {
+    if (!user) return;
+    userService.getPreferences().then((prefs) => {
+      if (prefs?.preferences && typeof prefs.preferences === "object") {
+        const backendValue = (prefs.preferences as Record<string, unknown>).large_text;
+        if (typeof backendValue === "boolean") {
+          setLargeText(backendValue);
+        }
+      }
+    }).catch(() => {});
+  }, [user?.disability_type]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!user) return;
+      const prevEarnedIds = new Set(badges.filter((b) => b.earned).map((b) => b.id));
+      userService.getBadges().then((fresh) => {
+        const newBadge = fresh.find((b) => b.earned && !prevEarnedIds.has(b.id));
+        setBadges(fresh);
+        if (newBadge) setEarnedModal(newBadge);
+      }).catch(() => {});
+    }, [user])
+  );
+
   const scrollY = useSharedValue(0);
 
   const scrollHandler = useAnimatedScrollHandler((e) => {
@@ -89,8 +122,7 @@ export default function ProfileTab() {
     );
   }
 
-  // TODO: replace with earned badges from user profile API when available
-  const earnedBadges: string[] = [];
+  const earnedBadges = badges.filter((b) => b.earned);
 
   const initials =
     (user.name ?? "")
@@ -117,9 +149,9 @@ export default function ProfileTab() {
           {earnedBadges.length > 0 && (
             <View style={styles.badges}>
               {earnedBadges.map((b) => (
-                <View key={b} style={styles.badgeChip}>
+                <View key={b.id} style={styles.badgeChip}>
                   <Ionicons name="star" size={12} color={Colors.white} />
-                  <Text variant="caption" color={Colors.white}>{b}</Text>
+                  <Text variant="caption" color={Colors.white}>{b.name}</Text>
                 </View>
               ))}
             </View>
@@ -168,6 +200,10 @@ export default function ProfileTab() {
           ))}
         </Section>
 
+        {badges.length > 0 && (
+          <BadgeStrip badges={badges} onSeeAll={() => setShowAllBadges(true)} />
+        )}
+
         {/* UI preferences */}
         <Section title="UI PREFERENCES">
           <View style={styles.prefRow}>
@@ -195,6 +231,13 @@ export default function ProfileTab() {
           </Pressable>
         </Section>
       </AnimatedScrollView>
+
+      <BadgeEarnedModal badge={earnedModal} onDismiss={() => setEarnedModal(null)} />
+      <AllBadgesSheet
+        badges={badges}
+        visible={showAllBadges}
+        onClose={() => setShowAllBadges(false)}
+      />
     </View>
   );
 }
