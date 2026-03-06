@@ -28,8 +28,12 @@ export function OnboardingSlide({
 
       {/* Bottom — white card */}
       <View style={styles.card}>
-        <View style={styles.badge}>
-          <RNText style={styles.badgeText}>{stepNumber}</RNText>
+        <View
+          style={styles.badge}
+          accessible
+          accessibilityLabel={`Step ${parseInt(stepNumber, 10)} of 3`}
+        >
+          <RNText style={styles.badgeText} accessibilityElementsHidden>{stepNumber}</RNText>
         </View>
 
         <Text style={styles.title}>{title}</Text>

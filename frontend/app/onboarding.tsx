@@ -88,7 +88,7 @@ export default function Onboarding() {
         const isLast = i === TOTAL - 1;
         return (
           <OnboardingSlide
-            key={i}
+            key={stepNumber}
             stepNumber={stepNumber}
             title={title}
             subtitle={subtitle}
@@ -133,7 +133,7 @@ function SlideFooter({
   const isVisible = activeIndex === slideIndex;
 
   return (
-    <View style={footerStyles.container} pointerEvents={isVisible ? "auto" : "none"}>
+    <View style={[footerStyles.container, { pointerEvents: isVisible ? "auto" : "none" }]}>
       {/* Progress dots */}
       <View style={footerStyles.dots}>
         {Array.from({ length: total }).map((_, di) => (
@@ -150,14 +150,14 @@ function SlideFooter({
       {isLast ? (
         <>
           <Button label="Create an account" onPress={onCreateAccount} fullWidth />
-          <Pressable onPress={onSkip} style={footerStyles.ghost}>
+          <Pressable onPress={onSkip} style={footerStyles.ghost} accessibilityRole="button" accessibilityLabel="Continue as guest">
             <RNText style={footerStyles.ghostText}>Continue as guest</RNText>
           </Pressable>
         </>
       ) : (
         <>
           <Button label="Continue" onPress={onContinue} fullWidth />
-          <Pressable onPress={onSkip} style={footerStyles.ghost}>
+          <Pressable onPress={onSkip} style={footerStyles.ghost} accessibilityRole="button" accessibilityLabel="Skip onboarding">
             <RNText style={footerStyles.ghostText}>Skip for now</RNText>
           </Pressable>
         </>
