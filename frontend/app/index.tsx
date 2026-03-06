@@ -82,7 +82,7 @@ export default function Index() {
     storage.get<boolean>("hasSeenOnboarding").then((val) => {
       setHasOnboarded(!!val);
     });
-    const timer = setTimeout(() => setMinTimeElapsed(true), 500);
+    const timer = setTimeout(() => setMinTimeElapsed(true), 1000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -104,6 +104,7 @@ export default function Index() {
           <Ionicons name="location-sharp" size={34} color={Colors.white} />
         </View>
         <RNText style={styles.brand}>rayo</RNText>
+        <RNText style={styles.tagline}>Every space, made clear.</RNText>
       </View>
 
       <View style={styles.dotsRow}>
@@ -151,6 +152,12 @@ const styles = StyleSheet.create({
     color: Colors.white,
     letterSpacing: 1,
     marginBottom: 6,
+  },
+  tagline: {
+    fontFamily: FontFamily.body,
+    fontSize: 15,
+    color: Colors.white + "BB",
+    letterSpacing: 0.3,
   },
   dotsRow: {
     position: "absolute",
