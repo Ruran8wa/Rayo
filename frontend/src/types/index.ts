@@ -118,16 +118,16 @@ export interface Badge {
   id: string;
   name: string;
   description: string;
-  category: "community" | "building" | "photo";
+  category: 'community' | 'explorer' | 'impact';
   requirement: string;
-  progress?: number;
-  required?: number;
+  required: number;
+  progress: number;
   earned: boolean;
   earned_at?: string;
 }
 
 // User preferences
 export interface UserPreferences {
-  disability_type: string;
+  disability_type?: string;
   preferences: Record<string, string | number | boolean>;
 }
