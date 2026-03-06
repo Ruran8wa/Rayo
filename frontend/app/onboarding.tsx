@@ -174,7 +174,6 @@ const footerStyles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     gap: 6,
-    marginBottom: Spacing.md,
   },
   dot: {
     height: 6,
