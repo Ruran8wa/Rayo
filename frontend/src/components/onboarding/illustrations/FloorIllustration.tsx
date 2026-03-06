@@ -31,7 +31,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.13)",
     borderRadius: 14,
     padding: 16,
-    position: "relative",
   },
   statusDot: {
     position: "absolute",
