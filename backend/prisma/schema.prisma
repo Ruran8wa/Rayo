@@ -39,10 +39,29 @@ model Building {
   site         Site         @relation(fields: [site_id], references: [id], onDelete: Cascade)
   floors       Floor[]
   saved_places SavedPlace[]
+  reviews      Review[]
 
   @@index([site_id])
   @@index([lat, lng])
   @@map("buildings")
+}
+
+model Review {
+  id                  String   @id @default(uuid())
+  user_id             String
+  building_id         String?
+  place_name          String?
+  place_address       String?
+  scope               String
+  accessibility_level String
+  comment             String?
+  created_at          DateTime @default(now())
+
+  building Building? @relation(fields: [building_id], references: [id], onDelete: SetNull)
+
+  @@index([building_id])
+  @@index([user_id])
+  @@map("reviews")
 }
 
 model Floor {

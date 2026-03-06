@@ -18,4 +18,10 @@ export class SitesController {
   findOne(@Param('id') id: string) {
     return this.sitesService.findById(id);
   }
+
+  @Get(':id/buildings')
+  @ApiOperation({ summary: 'List all buildings in a site' })
+  findBuildings(@Param('id') id: string) {
+    return this.sitesService.findBuildings(id);
+  }
 }

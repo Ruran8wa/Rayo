@@ -14,6 +14,30 @@ export class SitesService {
     });
   }
 
+  async findBuildings(siteId: string) {
+    const site = await this.prisma.site.findUnique({ where: { id: siteId } });
+
+    if (!site) {
+      throw new NotFoundException(`Site with id ${siteId} not found`);
+    }
+
+    return this.prisma.building.findMany({
+      where: { site_id: siteId },
+      select: {
+        id: true,
+        building_name: true,
+        total_floors: true,
+        accessibility_class: true,
+        accessibility_score: true,
+        step_free_entrance: true,
+        elevator_present: true,
+        lat: true,
+        lng: true,
+      },
+      orderBy: { building_name: 'asc' },
+    });
+  }
+
   async findById(id: string) {
     const site = await this.prisma.site.findUnique({
       where: { id },
