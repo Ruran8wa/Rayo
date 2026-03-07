@@ -73,10 +73,7 @@ export class BuildingsService {
   }
 
   async getGeoJson(bbox?: string) {
-    const where: Record<string, unknown> = {
-      lat: { not: null },
-      lng: { not: null },
-    };
+    const where: Record<string, unknown> = {};
 
     if (bbox) {
       const [south, west, north, east] = bbox.split(',').map(Number);
@@ -84,44 +81,46 @@ export class BuildingsService {
       where.lng = { gte: west, lte: east };
     }
 
-    const buildings = await this.prisma.building.findMany({
+    const sites = await this.prisma.site.findMany({
       where,
       include: {
-        site: { select: { id: true, name: true, site_type: true } },
+        buildings: {
+          select: { accessibility_class: true, accessibility_score: true },
+        },
       },
     });
 
     return {
       type: 'FeatureCollection' as const,
-      features: buildings.map((b) => ({
-        type: 'Feature' as const,
-        geometry: {
-          type: 'Point' as const,
-          coordinates: [b.lng, b.lat],
-        },
-        properties: {
-          id: b.id,
-          building_name: b.building_name,
-          site_name: b.site.name,
-          site_type: b.site.site_type,
-          accessibility_class: b.accessibility_class,
-          accessibility_score: b.accessibility_score,
-        },
-      })),
+      features: sites.map((s) => {
+        const classes = s.buildings.map((b) => b.accessibility_class).filter(Boolean);
+        const topClass = classes.includes('high') ? 'high'
+          : classes.includes('medium') ? 'medium'
+          : classes.includes('low') ? 'low'
+          : null;
+        return {
+          type: 'Feature' as const,
+          geometry: {
+            type: 'Point' as const,
+            coordinates: [s.lng, s.lat],
+          },
+          properties: {
+            id: s.id,
+            name: s.name,
+            site_type: s.site_type,
+            accessibility_class: topClass,
+          },
+        };
+      }),
     };
   }
 
   async findNearby(lat: number, lng: number) {
     const delta = 0.05; // ~5.5 km bounding box
-    return this.prisma.building.findMany({
+    return this.prisma.site.findMany({
       where: {
         lat: { gte: lat - delta, lte: lat + delta },
         lng: { gte: lng - delta, lte: lng + delta },
-      },
-      include: {
-        site: {
-          select: { id: true, name: true, site_type: true, address: true },
-        },
       },
     });
   }
@@ -136,14 +135,12 @@ export class BuildingsService {
       return { error: 'GOOGLE_MAPS_API_KEY is not configured on the server.' };
     }
 
-    const buildings = await this.prisma.building.findMany({
-      include: { site: { select: { name: true, address: true } } },
-    });
+    const sites = await this.prisma.site.findMany();
 
     const results = { updated: 0, skipped: 0, failed: [] as string[] };
 
-    for (const building of buildings) {
-      const query = `${building.building_name} Kigali Rwanda`;
+    for (const site of sites) {
+      const query = `${site.name} Kigali Rwanda`;
       try {
         const url = new URL('https://maps.googleapis.com/maps/api/place/findplacefromtext/json');
         url.searchParams.set('input', query);
@@ -164,15 +161,15 @@ export class BuildingsService {
         }
 
         const { lat, lng } = json.candidates[0].geometry.location;
-        await this.prisma.building.update({
-          where: { id: building.id },
+        await this.prisma.site.update({
+          where: { id: site.id },
           data: { lat, lng },
         });
-        this.logger.log(`Geocoded "${building.building_name}" → (${lat}, ${lng})`);
+        this.logger.log(`Geocoded "${site.name}" → (${lat}, ${lng})`);
         results.updated++;
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
-        results.failed.push(`${building.building_name}: ${message}`);
+        results.failed.push(`${site.name}: ${message}`);
       }
 
       // Respect Google's rate limit (10 req/s on free tier)

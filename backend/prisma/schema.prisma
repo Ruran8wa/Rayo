@@ -31,8 +31,6 @@ model Building {
   ramps_present       Boolean      @default(false)
   accessibility_class String?
   accessibility_score Float?
-  lat                 Float?
-  lng                 Float?
   created_at          DateTime     @default(now())
   updated_at          DateTime     @updatedAt
 
@@ -42,7 +40,6 @@ model Building {
   reviews      Review[]
 
   @@index([site_id])
-  @@index([lat, lng])
   @@map("buildings")
 }
 
