@@ -74,4 +74,13 @@ export class SupabaseClientService {
     }
     return this.mapResult(data.user, data.session);
   }
+
+  async refresh(refreshToken: string): Promise<AuthResult> {
+    const { data, error } = await this.client.auth.refreshSession({ refresh_token: refreshToken });
+    if (error) throw new UnauthorizedException(error.message);
+    if (!data.user || !data.session) {
+      throw new UnauthorizedException('Session refresh failed');
+    }
+    return this.mapResult(data.user, data.session);
+  }
 }
