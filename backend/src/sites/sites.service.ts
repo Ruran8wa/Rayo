@@ -69,8 +69,6 @@ export class SitesService {
         accessibility_score: true,
         step_free_entrance: true,
         elevator_present: true,
-        lat: true,
-        lng: true,
       },
       orderBy: { building_name: 'asc' },
     });
@@ -89,8 +87,6 @@ export class SitesService {
             accessibility_score: true,
             step_free_entrance: true,
             elevator_present: true,
-            lat: true,
-            lng: true,
           },
           orderBy: { building_name: 'asc' },
         },

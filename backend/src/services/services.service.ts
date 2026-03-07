@@ -130,8 +130,6 @@ export class ServicesService {
         building_name: s.floor.building.building_name,
         accessibility_class: s.floor.building.accessibility_class,
         accessibility_score: s.floor.building.accessibility_score,
-        lat: s.floor.building.lat,
-        lng: s.floor.building.lng,
         site_name: s.floor.building.site.name,
         site_type: s.floor.building.site.site_type,
       },
