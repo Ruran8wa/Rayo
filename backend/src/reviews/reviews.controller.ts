@@ -20,6 +20,14 @@ export class ReviewsController {
     return this.reviewsService.create(user.userId, dto);
   }
 
+  @Get('my')
+  @ApiBearerAuth()
+  @UseGuards(SupabaseGuard)
+  @ApiOperation({ summary: 'Get all reviews submitted by the current user' })
+  findMine(@CurrentUser() user: AuthUser) {
+    return this.reviewsService.findByUser(user.userId);
+  }
+
   @Get('building/:buildingId')
   @ApiOperation({ summary: 'Get all reviews for a building' })
   findByBuilding(@Param('buildingId') buildingId: string) {

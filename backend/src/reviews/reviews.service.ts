@@ -39,4 +39,16 @@ export class ReviewsService {
       orderBy: { created_at: 'desc' },
     });
   }
+
+  async findByUser(userId: string) {
+    return this.prisma.review.findMany({
+      where: { user_id: userId },
+      include: {
+        building: {
+          select: { id: true, building_name: true, site: { select: { name: true } } },
+        },
+      },
+      orderBy: { created_at: 'desc' },
+    });
+  }
 }
