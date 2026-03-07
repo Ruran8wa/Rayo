@@ -29,6 +29,12 @@ export class UsersController {
     return this.usersService.listUsers();
   }
 
+  @Get('stats')
+  @ApiOperation({ summary: 'Get user activity stats (reviews, saves, badges)' })
+  getStats(@CurrentUser() user: AuthUser) {
+    return this.usersService.getStats(user.userId);
+  }
+
   @Get('badges')
   @ApiOperation({ summary: 'Get all badges with earned status and progress' })
   getBadges(@CurrentUser() user: AuthUser) {

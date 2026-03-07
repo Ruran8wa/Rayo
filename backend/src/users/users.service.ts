@@ -33,6 +33,15 @@ export class UsersService {
     return this.badgesService.getUserBadges(userId);
   }
 
+  async getStats(userId: string) {
+    const [reviewCount, saveCount, badgeCount] = await Promise.all([
+      this.prisma.review.count({ where: { user_id: userId } }),
+      this.prisma.savedPlace.count({ where: { user_id: userId } }),
+      this.prisma.userBadge.count({ where: { user_id: userId } }),
+    ]);
+    return { reviewCount, saveCount, badgeCount };
+  }
+
   async listUsers() {
     const { data, error } = await this.adminClient.auth.admin.listUsers();
     if (error) throw new InternalServerErrorException(error.message);
