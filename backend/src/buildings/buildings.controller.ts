@@ -1,8 +1,10 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Post, Patch, Param, Query, Body, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { BuildingsService } from './buildings.service';
 import { SearchBuildingsDto } from './dto/search-buildings.dto';
 import { GeoJsonQueryDto } from './dto/geojson-query.dto';
+import { CreateBuildingDto, UpdateBuildingDto } from './dto/upsert-building.dto';
+import { SupabaseGuard } from '../auth/supabase.guard';
 
 @ApiTags('Buildings')
 @Controller('buildings')
@@ -34,5 +36,29 @@ export class BuildingsController {
   @ApiOperation({ summary: 'Get building detail with floors and services' })
   findOne(@Param('id') id: string) {
     return this.buildingsService.findById(id);
+  }
+
+  @Post('geocode-all')
+  @UseGuards(SupabaseGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update every building\'s lat/lng using Google Places (admin)' })
+  geocodeAll() {
+    return this.buildingsService.geocodeAll();
+  }
+
+  @Post()
+  @UseGuards(SupabaseGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a building and auto-trigger ML prediction' })
+  create(@Body() dto: CreateBuildingDto) {
+    return this.buildingsService.create(dto);
+  }
+
+  @Patch(':id')
+  @UseGuards(SupabaseGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update a building and auto-trigger ML prediction' })
+  update(@Param('id') id: string, @Body() dto: UpdateBuildingDto) {
+    return this.buildingsService.update(id, dto);
   }
 }
