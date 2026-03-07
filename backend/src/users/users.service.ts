@@ -29,6 +29,14 @@ export class UsersService {
     });
   }
 
+  async updateProfile(userId: string, name: string) {
+    const { data, error } = await this.adminClient.auth.admin.updateUserById(userId, {
+      user_metadata: { name },
+    });
+    if (error) throw new InternalServerErrorException(error.message);
+    return { name: data.user.user_metadata?.name as string };
+  }
+
   async getBadges(userId: string) {
     return this.badgesService.getUserBadges(userId);
   }

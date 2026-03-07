@@ -2,11 +2,14 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   Param,
   UseGuards,
 } from '@nestjs/common';
+import { IsString, MinLength } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { SupabaseGuard } from '../auth/supabase.guard';
@@ -15,6 +18,13 @@ import { PreferencesDto } from './dto/preferences.dto';
 import { SavedPlaceDto } from './dto/saved-place.dto';
 
 type AuthUser = { userId: string };
+
+class UpdateProfileDto {
+  @ApiProperty({ example: 'Jane Smith' })
+  @IsString()
+  @MinLength(1)
+  name: string;
+}
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -27,6 +37,12 @@ export class UsersController {
   @ApiOperation({ summary: 'List all registered users' })
   listUsers() {
     return this.usersService.listUsers();
+  }
+
+  @Patch('profile')
+  @ApiOperation({ summary: 'Update display name' })
+  updateProfile(@CurrentUser() user: AuthUser, @Body() dto: UpdateProfileDto) {
+    return this.usersService.updateProfile(user.userId, dto.name);
   }
 
   @Get('stats')
