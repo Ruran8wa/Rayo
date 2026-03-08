@@ -5,7 +5,6 @@ import { Ionicons } from "@expo/vector-icons";
 export function ReviewIllustration() {
   return (
     <View style={styles.card}>
-      {/* Avatar row */}
       <View style={styles.avatarRow}>
         <View style={styles.avatar}>
           <Ionicons name="person" size={20} color="rgba(255,255,255,0.5)" />
@@ -15,8 +14,6 @@ export function ReviewIllustration() {
           <View style={[styles.bar, { width: "40%", height: 6 } as ViewStyle]} />
         </View>
       </View>
-
-      {/* Stars */}
       <View style={styles.stars}>
         {[0, 1, 2].map((i) => (
           <Ionicons key={i} name="star" size={22} color="rgba(255,255,255,0.55)" />
@@ -25,14 +22,10 @@ export function ReviewIllustration() {
           <Ionicons key={i} name="star-outline" size={22} color="rgba(255,255,255,0.3)" />
         ))}
       </View>
-
-      {/* Text bars */}
       <View style={styles.textBars}>
         <View style={[styles.bar, { width: "85%", height: 7 } as ViewStyle]} />
         <View style={[styles.bar, { width: "70%", height: 7 } as ViewStyle]} />
       </View>
-
-      {/* Tag chips */}
       <View style={styles.chips}>
         {[60, 80].map((w, i) => (
           <View key={i} style={[styles.chip, { width: w } as ViewStyle]} />

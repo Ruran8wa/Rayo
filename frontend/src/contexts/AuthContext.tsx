@@ -1,4 +1,4 @@
-import React, { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import React, { createContext, ReactNode, useContext, useEffect, useRef, useState } from "react";
 import type { Nullable, User } from "../types/index";
 import { authService } from "../services/api/auth.service";
 import { apiClient } from "../services/api/client";
@@ -12,6 +12,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, name: string, disabilityType?: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateUser: (user: User) => Promise<void>;
+  refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,16 +21,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<Nullable<User>>(null);
   const [token, setToken] = useState<Nullable<string>>(null);
   const [loading, setLoading] = useState(true);
+  const refreshTokenRef = useRef<string | null>(null);
 
   useEffect(() => {
     const bootstrap = async () => {
       try {
         const storedToken = await storage.get<string>("auth_token");
+        const storedRefresh = await storage.get<string>("refresh_token");
         const storedUser = await storage.get<User>("user");
         if (storedToken && storedUser) {
           apiClient.setAuthToken(storedToken);
           setToken(storedToken);
           setUser(storedUser);
+          refreshTokenRef.current = storedRefresh ?? null;
         }
       } catch (e) {
         console.error("Auth bootstrap error:", e);
@@ -42,14 +46,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const signIn = async (email: string, password: string) => {
     const { user: u, tokens } = await authService.login(email, password);
-    try {
-      await storage.set("auth_token", tokens.access_token);
-      await storage.set("user", u);
-    } catch (e) {
-      apiClient.removeAuthToken();
-      throw e;
-    }
+    await storage.set("auth_token", tokens.access_token);
+    await storage.set("refresh_token", tokens.refresh_token ?? "");
+    await storage.set("user", u);
     apiClient.setAuthToken(tokens.access_token);
+    refreshTokenRef.current = tokens.refresh_token ?? null;
     setToken(tokens.access_token);
     setUser(u);
   };
@@ -61,14 +62,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     disabilityType?: string
   ) => {
     const { user: u, tokens } = await authService.register(name, email, password, disabilityType);
-    try {
-      await storage.set("auth_token", tokens.access_token);
-      await storage.set("user", u);
-    } catch (e) {
-      apiClient.removeAuthToken();
-      throw e;
-    }
+    await storage.set("auth_token", tokens.access_token);
+    await storage.set("refresh_token", tokens.refresh_token ?? "");
+    await storage.set("user", u);
     apiClient.setAuthToken(tokens.access_token);
+    refreshTokenRef.current = tokens.refresh_token ?? null;
     setToken(tokens.access_token);
     setUser(u);
   };
@@ -76,7 +74,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signOut = async () => {
     apiClient.removeAuthToken();
     await storage.remove("auth_token");
+    await storage.remove("refresh_token");
     await storage.remove("user");
+    refreshTokenRef.current = null;
     setToken(null);
     setUser(null);
   };
@@ -86,8 +86,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     await storage.set("user", u);
   };
 
+  const refreshSession = async (): Promise<void> => {
+    const rt = refreshTokenRef.current;
+    if (!rt) {
+
+      await signOut();
+      throw new Error("SESSION_EXPIRED");
+    }
+    const { user: u, tokens } = await authService.refresh(rt);
+    await storage.set("auth_token", tokens.access_token);
+    await storage.set("refresh_token", tokens.refresh_token ?? "");
+    await storage.set("user", u);
+    apiClient.setAuthToken(tokens.access_token);
+    refreshTokenRef.current = tokens.refresh_token ?? rt;
+    setToken(tokens.access_token);
+    setUser(u);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, signIn, signUp, signOut, updateUser }}>
+    <AuthContext.Provider value={{ user, token, loading, signIn, signUp, signOut, updateUser, refreshSession }}>
       {children}
     </AuthContext.Provider>
   );

@@ -8,14 +8,14 @@ export const Colors = {
   textSecondary: "#6B6B6B",
   textOnPrimary: "#FFFFFF",
   border: "#E8E4DF",
-  // Accessibility badges
+
   fullyAccessible: "#1D3D2F",
   partiallyAccessible: "#F59E0B",
   notAccessible: "#EF4444",
-  // Status
+
   open: "#1D3D2F",
   closed: "#EF4444",
-  // Utility
+
   white: "#FFFFFF",
   black: "#000000",
   transparent: "transparent",

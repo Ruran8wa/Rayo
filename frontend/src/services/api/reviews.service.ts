@@ -26,10 +26,23 @@ function unwrap<T>(responseData: unknown): T {
   return (body.data ?? body) as T;
 }
 
+export interface MyReview extends ReviewRecord {
+  building: {
+    id: string;
+    building_name: string;
+    site: { name: string } | null;
+  } | null;
+}
+
 export const reviewsService = {
   async create(payload: CreateReviewPayload): Promise<ReviewRecord> {
     const response = await apiClient.post("/reviews", payload);
     return unwrap<ReviewRecord>(response.data);
+  },
+
+  async getMyReviews(): Promise<MyReview[]> {
+    const response = await apiClient.get("/reviews/my");
+    return unwrap<MyReview[]>(response.data) ?? [];
   },
 
   async getByBuilding(buildingId: string): Promise<ReviewRecord[]> {

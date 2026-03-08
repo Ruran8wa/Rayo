@@ -4,7 +4,6 @@ import pandas as pd
 input_file = "../data/synthetic/data/synthetic_dataset_v1.json"
 output_file = "../data/processed/building_level.csv"
 
-
 def flatten_dataset():
     with open(input_file, "r") as f:
         sites = json.load(f)
@@ -30,7 +29,6 @@ def flatten_dataset():
             num_services_upper = 0
             num_critical_upper = 0
 
-            # Vision feature accumulators
             signage_clear_sum = 0
             signage_contrast_sum = 0
             num_floors = len(building["floors"])
@@ -38,7 +36,6 @@ def flatten_dataset():
             for floor in building["floors"]:
                 floor_level = floor["floor_level"]
 
-                # Accumulate vision features per floor
                 signage_clear_sum += int(floor.get("clear_signage", 0))
                 signage_contrast_sum += int(
                     floor.get("high_contrast_signage", 0)
@@ -65,7 +62,6 @@ def flatten_dataset():
                     if floor_level > 0:
                         num_services_upper += 1
 
-            # Vision features (averaged across floors)
             avg_clear_signage = (
                 round(signage_clear_sum / num_floors, 3)
                 if num_floors else 0
@@ -75,7 +71,6 @@ def flatten_dataset():
                 if num_floors else 0
             )
 
-            # Ratio features
             accessible_service_ratio = (
                 round(num_accessible_services / total_services, 3)
                 if total_services else 0
@@ -127,7 +122,6 @@ def flatten_dataset():
     print(f"Saved building-level dataset to {output_file}")
     print(f"Shape: {df.shape}")
     print(f"Columns: {list(df.columns)}")
-
 
 if __name__ == "__main__":
     flatten_dataset()

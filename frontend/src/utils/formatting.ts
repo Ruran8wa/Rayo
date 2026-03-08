@@ -1,10 +1,4 @@
-/**
- * Formatting Utilities
- */
 
-/**
- * Format currency
- */
 export const formatCurrency = (
   amount: number,
   currency: string = "USD",
@@ -16,9 +10,6 @@ export const formatCurrency = (
   }).format(amount);
 };
 
-/**
- * Format date
- */
 export const formatDate = (
   date: Date | string,
   format: "short" | "long" | "full" = "short",
@@ -35,9 +26,6 @@ export const formatDate = (
   return dateObj.toLocaleDateString("en-US", options[format]);
 };
 
-/**
- * Format relative time (e.g., "2 hours ago")
- */
 export const formatRelativeTime = (date: Date | string): string => {
   const dateObj = typeof date === "string" ? new Date(date) : date;
   const now = new Date();
@@ -62,24 +50,15 @@ export const formatRelativeTime = (date: Date | string): string => {
   return "just now";
 };
 
-/**
- * Truncate text
- */
 export const truncate = (text: string, maxLength: number): string => {
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength) + "...";
 };
 
-/**
- * Capitalize first letter
- */
 export const capitalize = (text: string): string => {
   return text.charAt(0).toUpperCase() + text.slice(1);
 };
 
-/**
- * Format file size
- */
 export const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return "0 Bytes";
   const k = 1024;

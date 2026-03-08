@@ -1,7 +1,3 @@
-/**
- * API Client
- * Centralized HTTP client with error handling and interceptors
- */
 
 import ENV from "../../config/env";
 import type { ApiError, ApiResponse } from "../../types/index";
@@ -20,9 +16,6 @@ export class ApiClient {
     };
   }
 
-  /**
-   * Set authorization token
-   */
   setAuthToken(token: string) {
     this.headers = {
       ...this.headers,
@@ -30,17 +23,11 @@ export class ApiClient {
     };
   }
 
-  /**
-   * Remove authorization token
-   */
   removeAuthToken() {
     const { Authorization, ...rest } = this.headers as any;
     this.headers = rest;
   }
 
-  /**
-   * Generic request handler
-   */
   private async request<T>(
     endpoint: string,
     options: RequestInit = {},
@@ -98,9 +85,6 @@ export class ApiClient {
     }
   }
 
-  /**
-   * GET request
-   */
   async get<T>(
     endpoint: string,
     params?: Record<string, any>,
@@ -113,9 +97,6 @@ export class ApiClient {
     });
   }
 
-  /**
-   * POST request
-   */
   async post<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: "POST",
@@ -123,9 +104,6 @@ export class ApiClient {
     });
   }
 
-  /**
-   * PUT request
-   */
   async put<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: "PUT",
@@ -133,9 +111,6 @@ export class ApiClient {
     });
   }
 
-  /**
-   * PATCH request
-   */
   async patch<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: "PATCH",
@@ -143,9 +118,6 @@ export class ApiClient {
     });
   }
 
-  /**
-   * DELETE request
-   */
   async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: "DELETE",
@@ -153,5 +125,4 @@ export class ApiClient {
   }
 }
 
-// Export singleton instance
 export const apiClient = new ApiClient();

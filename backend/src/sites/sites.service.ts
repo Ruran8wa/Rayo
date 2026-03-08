@@ -22,7 +22,6 @@ export class SitesService {
 
     const updated = await this.prisma.site.update({ where: { id }, data: dto });
 
-    // Re-predict all buildings if site_type changed (it's part of the ML payload)
     if (dto.site_type && dto.site_type !== site.site_type) {
       this.repredictAllBuildings(id);
     }

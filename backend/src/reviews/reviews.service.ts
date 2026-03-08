@@ -25,7 +25,6 @@ export class ReviewsService {
       },
     });
 
-    // Fire-and-forget badge evaluation
     this.badgesService.evaluate(userId).catch((err: Error) => {
       this.logger.error(`Badge evaluation failed for ${userId}: ${err.message}`);
     });

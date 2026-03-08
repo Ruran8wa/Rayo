@@ -15,7 +15,6 @@ export function MapSearchBar() {
 
   return (
     <View style={styles.container}>
-      {/* Brand mark */}
       <Text style={styles.brand}>rayo</Text>
       <View style={styles.divider} />
 

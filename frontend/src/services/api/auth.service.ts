@@ -1,7 +1,6 @@
 import type { AuthTokens, User } from "../../types";
 import { apiClient } from "./client";
 
-/** The API wraps every response in { "data": <actual> }. Unwrap it. */
 function unwrap<T>(responseData: unknown): T {
   const body = responseData as Record<string, unknown>;
   return (body.data ?? body) as T;
@@ -12,6 +11,14 @@ export const authService = {
     const response = await apiClient.post<{ user: User; tokens: AuthTokens }>(
       "/auth/login",
       { email, password }
+    );
+    return unwrap(response.data);
+  },
+
+  async refresh(refreshToken: string): Promise<{ user: User; tokens: AuthTokens }> {
+    const response = await apiClient.post<{ user: User; tokens: AuthTokens }>(
+      "/auth/refresh",
+      { refresh_token: refreshToken }
     );
     return unwrap(response.data);
   },

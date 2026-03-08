@@ -4,13 +4,8 @@ import { View, StyleSheet, ViewStyle } from "react-native";
 export function FloorIllustration() {
   return (
     <View style={styles.card}>
-      {/* Green status dot top right */}
       <View style={styles.statusDot} />
-
-      {/* Title bar */}
       <View style={[styles.bar, { width: "70%", height: 10, marginBottom: 14 } as ViewStyle]} />
-
-      {/* Row items */}
       {[0, 1, 2].map((i) => (
         <View key={i} style={styles.row}>
           <View style={[styles.bar, { width: 24, height: 24, borderRadius: 6, marginRight: 10 } as ViewStyle]} />

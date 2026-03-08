@@ -9,10 +9,6 @@ interface Props {
   children: React.ReactNode;
 }
 
-/**
- * Lightweight bottom sheet built on React Native's Modal.
- * Requires NO Reanimated — works in Expo Go with any RN version.
- */
 export function SimpleSheet({ visible, onClose, children }: Props) {
   const insets = useSafeAreaInsets();
 
@@ -25,10 +21,7 @@ export function SimpleSheet({ visible, onClose, children }: Props) {
       statusBarTranslucent
     >
       <View style={styles.overlay}>
-        {/* Dim backdrop — tap to dismiss */}
         <Pressable style={styles.backdrop} onPress={onClose} />
-
-        {/* Sheet card */}
         <View style={[styles.sheet, { paddingBottom: insets.bottom + 8 }]}>
           <View style={styles.handle} />
           {children}

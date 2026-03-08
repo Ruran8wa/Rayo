@@ -1,10 +1,4 @@
-/**
- * General Helper Utilities
- */
 
-/**
- * Debounce function
- */
 export const debounce = <T extends (...args: any[]) => any>(
   func: T,
   wait: number,
@@ -17,9 +11,6 @@ export const debounce = <T extends (...args: any[]) => any>(
   };
 };
 
-/**
- * Throttle function
- */
 export const throttle = <T extends (...args: any[]) => any>(
   func: T,
   limit: number,
@@ -35,30 +26,18 @@ export const throttle = <T extends (...args: any[]) => any>(
   };
 };
 
-/**
- * Sleep/delay function
- */
 export const sleep = (ms: number): Promise<void> => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
-/**
- * Generate random ID
- */
 export const generateId = (): string => {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 };
 
-/**
- * Deep clone object
- */
 export const deepClone = <T>(obj: T): T => {
   return JSON.parse(JSON.stringify(obj));
 };
 
-/**
- * Check if object is empty
- */
 export const isEmpty = (obj: any): boolean => {
   if (obj == null) return true;
   if (typeof obj === "string" || Array.isArray(obj)) return obj.length === 0;
@@ -66,9 +45,6 @@ export const isEmpty = (obj: any): boolean => {
   return false;
 };
 
-/**
- * Group array by key
- */
 export const groupBy = <T>(array: T[], key: keyof T): Record<string, T[]> => {
   return array.reduce(
     (result, item) => {
@@ -80,16 +56,10 @@ export const groupBy = <T>(array: T[], key: keyof T): Record<string, T[]> => {
   );
 };
 
-/**
- * Remove duplicates from array
- */
 export const unique = <T>(array: T[]): T[] => {
   return Array.from(new Set(array));
 };
 
-/**
- * Chunk array into smaller arrays
- */
 export const chunk = <T>(array: T[], size: number): T[][] => {
   const chunks: T[][] = [];
   for (let i = 0; i < array.length; i += size) {

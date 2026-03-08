@@ -1,14 +1,8 @@
-/**
- * Storage Utility
- * Wrapper around AsyncStorage for type-safe storage operations
- */
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const storage = {
-  /**
-   * Save data to storage
-   */
+
   async set<T>(key: string, value: T): Promise<void> {
     try {
       const jsonValue = JSON.stringify(value);
@@ -19,9 +13,6 @@ export const storage = {
     }
   },
 
-  /**
-   * Get data from storage
-   */
   async get<T>(key: string): Promise<T | null> {
     try {
       const jsonValue = await AsyncStorage.getItem(key);
@@ -32,9 +23,6 @@ export const storage = {
     }
   },
 
-  /**
-   * Remove data from storage
-   */
   async remove(key: string): Promise<void> {
     try {
       await AsyncStorage.removeItem(key);
@@ -44,9 +32,6 @@ export const storage = {
     }
   },
 
-  /**
-   * Clear all storage
-   */
   async clear(): Promise<void> {
     try {
       await AsyncStorage.clear();
@@ -56,9 +41,6 @@ export const storage = {
     }
   },
 
-  /**
-   * Get all keys
-   */
   async getAllKeys(): Promise<readonly string[]> {
     try {
       return await AsyncStorage.getAllKeys();

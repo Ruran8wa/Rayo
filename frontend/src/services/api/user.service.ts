@@ -1,6 +1,17 @@
 import type { Badge, Building, UserPreferences } from "../../types/index";
 import { apiClient } from "./client";
 
+function unwrap<T>(responseData: unknown): T {
+  const body = responseData as Record<string, unknown>;
+  return (body.data ?? body) as T;
+}
+
+export interface UserStats {
+  reviewCount: number;
+  saveCount: number;
+  badgeCount: number;
+}
+
 export const userService = {
   async getPreferences(): Promise<UserPreferences> {
     const response = await apiClient.get<UserPreferences>("/users/preferences");
@@ -30,8 +41,18 @@ export const userService = {
     await apiClient.delete(`/users/saved-places/${id}`);
   },
 
+  async getStats(): Promise<UserStats> {
+    const response = await apiClient.get('/users/stats');
+    return unwrap<UserStats>(response.data);
+  },
+
   async getBadges(): Promise<Badge[]> {
-    const response = await apiClient.get<Badge[]>('/users/badges');
-    return response.data;
+    const response = await apiClient.get('/users/badges');
+    return unwrap<Badge[]>(response.data);
+  },
+
+  async updateProfile(name: string): Promise<{ name: string }> {
+    const response = await apiClient.patch('/users/profile', { name });
+    return unwrap<{ name: string }>(response.data);
   },
 };

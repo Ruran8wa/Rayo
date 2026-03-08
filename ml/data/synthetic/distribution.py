@@ -54,12 +54,10 @@ PROBABILITIES = {
     "written_instructions": 0.6
 }
 
-
 def sample_from_distribution(distribution_dict):
     values = list(distribution_dict.keys())
     weights = list(distribution_dict.values())
     return random.choices(values, weights=weights, k=1)[0]
-
 
 def random_bool(probability):
     return 1 if random.random() < probability else 0

@@ -9,25 +9,22 @@ the trained model expects, applying heuristics for missing fields
 import json
 
 CRITICAL_SERVICES = {
-    # Hospital
+
     "icu", "picu", "nicu", "emergency", "pharmacy", "sub_pharmacy",
     "distribution_pharmacy", "laboratory", "hospitalization", "labor",
     "neonatology", "radio_theraphy", "scanner", "mri",
-    # School
+
     "registrar", "library", "wellness_center", "sick_bay",
-    # General
+
     "cashier", "customer_care", "insurance", "reception",
 }
-
 
 def _normalize(name):
     """Lowercase + underscore-normalize a service name."""
     return name.strip().lower().replace(" ", "_")
 
-
 def _is_critical(service_name):
     return _normalize(service_name) in CRITICAL_SERVICES
-
 
 def flatten_real_world(filepath):
     """
@@ -38,7 +35,7 @@ def flatten_real_world(filepath):
     with open(filepath, "r") as f:
         site = json.load(f)
 
-    site_type = site["site_type"].lower()          # model trained on lowercase
+    site_type = site["site_type"].lower()
     buildings = site.get("structure", {}).get("buildings", site.get("buildings", []))
 
     rows = []
@@ -46,7 +43,6 @@ def flatten_real_world(filepath):
     for building in buildings:
         total_floors = building["total_floors"]
 
-        # --- Structural features (nested paths) ---
         entrance = building.get("entrance", {})
         vert = building.get("vertical_access", {})
 
@@ -54,7 +50,6 @@ def flatten_real_world(filepath):
         handrails = int(vert.get("handrails_present", False))
         elevator = int(vert.get("elevator_present", False))
 
-        # --- Iterate floors ---
         total_services = 0
         num_accessible = 0
         num_critical = 0
@@ -68,13 +63,12 @@ def flatten_real_world(filepath):
         counted_floors = 0
 
         for floor in building.get("floors", []):
-            # Handle out-of-scope floors
+
             if floor.get("service_scope") == "out_of_scope":
                 continue
 
             floor_level = int(floor.get("floor_level", 0))
 
-            # Vision features (nested under accessibility.vision_support)
             acc_block = floor.get("accessibility", {})
             vision = acc_block.get("vision_support", {})
             clear_signage = int(vision.get("clear_signage", False))
@@ -83,7 +77,6 @@ def flatten_real_world(filepath):
             signage_contrast_sum += high_contrast
             counted_floors += 1
 
-            # Heuristic: floor is accessible if mobility_accessible AND reachable
             floor_accessible = acc_block.get("mobility_accessible", False)
 
             if floor_level == 0:
@@ -113,7 +106,6 @@ def flatten_real_world(filepath):
                 else:
                     num_services_upper += 1
 
-        # --- Compute averages and ratios ---
         avg_clear = (
             round(signage_clear_sum / counted_floors, 3) if counted_floors else 0
         )
@@ -133,7 +125,6 @@ def flatten_real_world(filepath):
             round(num_accessible_critical / num_critical, 3) if num_critical else 0
         )
 
-        # --- Compute expected score using the synthetic formula ---
         mobility_score = 0.4 * step_free + 0.4 * elevator + 0.2 * handrails
         vision_score = 0.6 * avg_clear + 0.4 * avg_high_contrast
         svc_ratio = num_accessible / total_services if total_services else 0
@@ -167,12 +158,12 @@ def flatten_real_world(filepath):
             "upper_service_ratio": upper_service_ratio,
             "critical_upper_ratio": critical_upper_ratio,
             "accessible_critical_ratio": accessible_critical_ratio,
-            # Structural counts (for v2 model)
+
             "num_critical_services": num_critical,
             "num_services_ground": num_services_ground,
             "num_services_upper": num_services_upper,
             "num_critical_upper": num_critical_upper,
-            # Pseudo ground truth
+
             "expected_score": expected_score,
             "expected_class": expected_class,
         })

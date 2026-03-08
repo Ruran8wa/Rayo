@@ -47,14 +47,12 @@ def compute_building_score(building_features, floors):
 
     return round(overall, 3)
 
-
 def classify(score):
     if score >= 0.75:
         return "high"
     elif score >= 0.4:
         return "medium"
     return "low"
-
 
 def aggregate_site_score(buildings):
     scores = [b["accessibility_score"] for b in buildings]

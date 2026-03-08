@@ -3,22 +3,16 @@ import { apiClient } from "./client";
 
 const KIGALI_BOUNDS = { south: -2.0, west: 29.9, north: -1.8, east: 30.2 } as const;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────
-
-/** The API wraps every response in { "data": <actual> }. Unwrap it. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function unwrap<T>(responseData: unknown): T {
   const body = responseData as Record<string, unknown>;
   return (body.data ?? body) as T;
 }
 
-// ─── API → Frontend type transforms ────────────────────────────────────────
-
 function mapAccessibilityClass(cls: string): AccessibilityLevel {
   if (cls === "high") return "fully";
   if (cls === "medium") return "partial";
   if (cls === "low") return "none";
-  return "unknown"; // not in database / unexpected value
+  return "unknown";
 }
 
 function mapFeatures(b: Record<string, unknown>): string[] {
@@ -53,6 +47,9 @@ function mapFloor(f: Record<string, unknown>): Floor {
     name: mapFloorName(level),
     floor_number: level,
     services: ((f.services as Record<string, unknown>[]) ?? []).map(mapService),
+    mobility_accessible: (f.mobility_accessible as boolean) ?? false,
+    clear_signage: (f.clear_signage as boolean) ?? false,
+    high_contrast_signage: (f.high_contrast_signage as boolean) ?? false,
   };
 }
 
@@ -72,10 +69,9 @@ function mapBuilding(b: Record<string, unknown>): Building {
       ? (b.floors as Record<string, unknown>[]).map(mapFloor)
       : undefined,
     site_id: site.id as string | undefined,
+    site_name: site.name as string | undefined,
   };
 }
-
-// ─── Service ────────────────────────────────────────────────────────────────
 
 export const buildingsService = {
   async getGeoJSON(bounds: {
@@ -86,7 +82,7 @@ export const buildingsService = {
   }): Promise<BuildingsGeoJSON> {
     const bbox = `${bounds.south},${bounds.west},${bounds.north},${bounds.east}`;
     const response = await apiClient.get("/buildings/geojson", { bbox });
-    // API returns { data: { type, features: [...] } }
+
     const geojson = unwrap<{ features?: Record<string, unknown>[] }>(response.data);
 
     return {
@@ -118,19 +114,18 @@ export const buildingsService = {
 
   async search(query: string): Promise<Building[]> {
     const response = await apiClient.get("/buildings/search", { q: query });
-    // API returns { data: [...buildings] }
+
     const list = unwrap<Record<string, unknown>[]>(response.data);
     return (list ?? []).map(mapBuilding);
   },
 
   async getById(id: string): Promise<Building> {
     const response = await apiClient.get(`/buildings/${id}`);
-    // API returns { data: { building } }
+
     const building = unwrap<Record<string, unknown>>(response.data);
     return mapBuilding(building);
   },
 
-  /** Returns all buildings in Kigali via GeoJSON — used for Browse tab initial load */
   async listAll(): Promise<Building[]> {
     const geojson = await buildingsService.getGeoJSON(KIGALI_BOUNDS);
     return geojson.features.map((f) => ({

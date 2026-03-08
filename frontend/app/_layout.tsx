@@ -7,9 +7,8 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-import { AuthProvider } from "@/contexts";
+import { AuthProvider, TextSizeProvider } from "@/contexts";
 
-// Hide native splash immediately — our JS loading screen in index.tsx takes over
 SplashScreen.hideAsync();
 
 const queryClient = new QueryClient({
@@ -29,6 +28,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
+        <TextSizeProvider>
         <AuthProvider>
           <Stack>
             <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -37,6 +37,10 @@ export default function RootLayout() {
             <Stack.Screen
               name="(auth)"
               options={{ headerShown: false, presentation: "modal" }}
+            />
+            <Stack.Screen
+              name="site/[id]"
+              options={{ headerShown: false }}
             />
             <Stack.Screen
               name="building/[id]"
@@ -49,6 +53,7 @@ export default function RootLayout() {
           </Stack>
           <StatusBar style="light" />
         </AuthProvider>
+        </TextSizeProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
   );

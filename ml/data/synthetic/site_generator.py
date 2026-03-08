@@ -7,7 +7,6 @@ from distribution import (
 from building_generator import generate_building
 from utils import aggregate_site_score
 
-
 def generate_site(site_id):
     site_type = sample_from_distribution(SITE_TYPE_DISTRIBUTION)
     num_buildings = sample_from_distribution(BUILDINGS_PER_SITE_DISTRIBUTION)
@@ -27,7 +26,6 @@ def generate_site(site_id):
         "site_score": site_score,
         "buildings": buildings
     }
-
 
 def generate_dataset(num_sites=300, output_file="synthetic_dataset_v1.json"):
     dataset = []

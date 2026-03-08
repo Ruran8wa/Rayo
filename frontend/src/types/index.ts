@@ -1,8 +1,7 @@
-// Utility types
+
 export type Nullable<T> = T | null;
 export type Optional<T> = T | undefined;
 
-// API
 export interface ApiResponse<T = unknown> {
   data: T;
   message?: string;
@@ -15,7 +14,6 @@ export interface ApiError {
   code?: string;
 }
 
-// Auth
 export interface User {
   id: string;
   email: string;
@@ -31,44 +29,43 @@ export interface AuthTokens {
   refresh_token?: string;
 }
 
-// Accessibility
 export type AccessibilityLevel = "fully" | "partial" | "none" | "unknown";
 
-// Service (room/amenity within a floor)
 export interface Service {
   id: string;
   name: string;
   icon?: string;
   accessibility_level: AccessibilityLevel;
-  features: string[]; // ["Ramp", "Elevator", "Braille", "Signs", "Wide door"]
+  features: string[];
 }
 
-// Floor
 export interface Floor {
   id: string;
-  name: string;          // "Ground Floor (G)", "1st Floor"
+  name: string;
   floor_number: number;
   services: Service[];
+  mobility_accessible: boolean;
+  clear_signage: boolean;
+  high_contrast_signage: boolean;
 }
 
-// Building
 export interface Building {
   id: string;
-  site_id?: string;      // set when building is part of a Site search result
+  site_id?: string;
+  site_name?: string;
   name: string;
   address: string;
-  latitude: number;
-  longitude: number;
-  category: string;      // "Health", "Government", "Bank", etc.
+  latitude?: number;
+  longitude?: number;
+  category: string;
   accessibility_level: AccessibilityLevel;
-  is_open?: boolean;     // not provided by API — omit when unknown
+  is_open?: boolean;
   floor_count: number;
-  distance_km?: number;  // set client-side when user location is known
-  features: string[];    // top-level features
-  floors?: Floor[];      // populated in detail view
+  distance_km?: number;
+  features: string[];
+  floors?: Floor[];
 }
 
-// Site (a campus/complex containing multiple buildings)
 export interface Site {
   id: string;
   name: string;
@@ -76,14 +73,15 @@ export interface Site {
   category: string;
   building_count: number;
   buildings: Building[];
+  lat?: number;
+  lng?: number;
 }
 
-// GeoJSON for map
 export interface BuildingFeature {
   type: "Feature";
   geometry: {
     type: "Point";
-    coordinates: [number, number]; // [lng, lat]
+    coordinates: [number, number];
   };
   properties: {
     id: string;
@@ -98,7 +96,6 @@ export interface BuildingsGeoJSON {
   features: BuildingFeature[];
 }
 
-// Review
 export interface Review {
   id: string;
   user_id: string;
@@ -113,7 +110,6 @@ export interface Review {
   created_at: string;
 }
 
-// Badges
 export interface Badge {
   id: string;
   name: string;
@@ -126,7 +122,6 @@ export interface Badge {
   earned_at?: string;
 }
 
-// User preferences
 export interface UserPreferences {
   disability_type?: string;
   preferences: Record<string, string | number | boolean>;

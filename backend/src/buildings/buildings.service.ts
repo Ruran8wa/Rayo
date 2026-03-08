@@ -116,7 +116,7 @@ export class BuildingsService {
   }
 
   async findNearby(lat: number, lng: number) {
-    const delta = 0.05; // ~5.5 km bounding box
+    const delta = 0.05;
     return this.prisma.site.findMany({
       where: {
         lat: { gte: lat - delta, lte: lat + delta },
@@ -172,7 +172,6 @@ export class BuildingsService {
         results.failed.push(`${site.name}: ${message}`);
       }
 
-      // Respect Google's rate limit (10 req/s on free tier)
       await new Promise((r) => setTimeout(r, 120));
     }
 

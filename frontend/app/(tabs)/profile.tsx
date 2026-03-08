@@ -1,14 +1,22 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Pressable,
   ScrollView,
   StyleSheet,
   Switch,
+  TextInput,
   View,
+  LayoutAnimation,
+  Platform,
+  UIManager,
 } from "react-native";
+
+if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 import Animated, {
   interpolate,
   useAnimatedScrollHandler,
@@ -36,24 +44,24 @@ const DISABILITY_OPTIONS = [
 ];
 
 export default function ProfileTab() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, updateUser } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { largeText, setLargeText } = useTextSize();
-  const [selectedNeeds, setSelectedNeeds] = useState<string[]>([]);
+  const [selectedNeed, setSelectedNeed] = useState<string>("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState("");
+  const [savingName, setSavingName] = useState(false);
   const [badges, setBadges] = useState<Badge[]>([]);
   const [earnedModal, setEarnedModal] = useState<Badge | null>(null);
+  const notifiedIds = useRef<Set<string> | null>(null);
   const [showAllBadges, setShowAllBadges] = useState(false);
 
   useEffect(() => {
-    if (user?.disability_type) {
-      setSelectedNeeds([user.disability_type.toLowerCase()]);
-    } else {
-      setSelectedNeeds([]);
-    }
+    setSelectedNeed(user?.disability_type?.toLowerCase() ?? "");
   }, [user?.disability_type]);
 
-  // Sync large_text from backend on mount (handles multi-device consistency)
   useEffect(() => {
     if (!user) return;
     userService.getPreferences().then((prefs) => {
@@ -69,11 +77,20 @@ export default function ProfileTab() {
   useFocusEffect(
     useCallback(() => {
       if (!user) return;
-      const prevEarnedIds = new Set(badges.filter((b) => b.earned).map((b) => b.id));
       userService.getBadges().then((fresh) => {
-        const newBadge = fresh.find((b) => b.earned && !prevEarnedIds.has(b.id));
+
+        if (notifiedIds.current === null) {
+          notifiedIds.current = new Set(fresh.filter((b) => b.earned).map((b) => b.id));
+          setBadges(fresh);
+          return;
+        }
+
+        const newBadge = fresh.find((b) => b.earned && !notifiedIds.current!.has(b.id));
         setBadges(fresh);
-        if (newBadge) setEarnedModal(newBadge);
+        if (newBadge) {
+          notifiedIds.current.add(newBadge.id);
+          setEarnedModal(newBadge);
+        }
       }).catch(() => {});
     }, [user])
   );
@@ -87,6 +104,21 @@ export default function ProfileTab() {
   const headerStyle = useAnimatedStyle(() => ({
     paddingBottom: interpolate(scrollY.value, [0, 80], [Spacing.xxl, Spacing.base], "clamp"),
   }));
+
+  const handleSaveName = async () => {
+    const trimmed = nameInput.trim();
+    if (!trimmed || trimmed === user?.name) { setEditingName(false); return; }
+    setSavingName(true);
+    try {
+      const { name } = await userService.updateProfile(trimmed);
+      if (user) await updateUser({ ...user, name });
+      setEditingName(false);
+    } catch {
+      Alert.alert("Error", "Could not update name. Please try again.");
+    } finally {
+      setSavingName(false);
+    }
+  };
 
   const handleSignOut = () => {
     Alert.alert("Sign out", "Are you sure?", [
@@ -144,7 +176,36 @@ export default function ProfileTab() {
           <View style={styles.avatar}>
             <Text variant="h2" color={Colors.primary}>{initials}</Text>
           </View>
-          <Text variant="h2" color={Colors.white} style={styles.name}>{user.name}</Text>
+          {editingName ? (
+            <View style={styles.nameEditRow}>
+              <TextInput
+                style={styles.nameInput}
+                value={nameInput}
+                onChangeText={setNameInput}
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={handleSaveName}
+                placeholderTextColor={Colors.white + "80"}
+                selectionColor={Colors.white}
+              />
+              <Pressable onPress={handleSaveName} disabled={savingName} style={styles.nameSaveBtn}>
+                <Ionicons name="checkmark" size={20} color={Colors.white} />
+              </Pressable>
+              <Pressable onPress={() => setEditingName(false)} style={styles.nameSaveBtn}>
+                <Ionicons name="close" size={20} color={Colors.white + "80"} />
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              style={styles.nameRow}
+              onPress={() => { setNameInput(user.name); setEditingName(true); }}
+              accessibilityRole="button"
+              accessibilityLabel="Edit name"
+            >
+              <Text variant="h2" color={Colors.white}>{user.name}</Text>
+              <Ionicons name="pencil-outline" size={16} color={Colors.white + "99"} style={styles.editIcon} />
+            </Pressable>
+          )}
           <Text variant="bodySm" color={Colors.white + "CC"}>{user.email}</Text>
           {earnedBadges.length > 0 && (
             <View style={styles.badges}>
@@ -159,49 +220,85 @@ export default function ProfileTab() {
         </Animated.View>
 
         {/* Accessibility needs */}
-        <Section
-          title="MY ACCESSIBILITY NEEDS"
-          actionLabel="Edit"
-          onAction={() =>
-            Alert.alert("Accessibility Needs", "Tap each option below to toggle your needs.")
-          }
-        >
-          {DISABILITY_OPTIONS.map((opt) => (
-            <Pressable
-              key={opt.id}
-              style={[styles.needRow, selectedNeeds.includes(opt.id) && styles.needRowActive]}
-              onPress={() => {
-                const next = selectedNeeds.includes(opt.id)
-                  ? selectedNeeds.filter((x) => x !== opt.id)
-                  : [...selectedNeeds, opt.id];
-                setSelectedNeeds(next);
-                const primary = next[0];
-                if (primary) {
-                  userService.setPreferences(primary, {}).catch(() => {});
-                }
-              }}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: selectedNeeds.includes(opt.id) }}
-              accessibilityLabel={opt.label}
-            >
-              <Ionicons
-                name={opt.icon as any}
-                size={20}
-                color={selectedNeeds.includes(opt.id) ? Colors.primary : Colors.textSecondary}
-              />
-              <View style={styles.needInfo}>
-                <Text variant="bodySm" bold>{opt.label}</Text>
-                <Text variant="caption" color={Colors.textSecondary}>{opt.sub}</Text>
-              </View>
-              {selectedNeeds.includes(opt.id) && (
-                <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
-              )}
-            </Pressable>
-          ))}
+        <Section title="MY ACCESSIBILITY NEEDS">
+          <Pressable
+            style={[styles.dropdownTrigger, dropdownOpen && styles.dropdownTriggerOpen]}
+            onPress={() => {
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+              setDropdownOpen((v) => !v);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Select accessibility need"
+          >
+            {(() => {
+              const active = DISABILITY_OPTIONS.find((o) => o.id === selectedNeed);
+              return active ? (
+                <View style={styles.dropdownSelected}>
+                  <Ionicons name={active.icon as any} size={18} color={Colors.primary} />
+                  <Text variant="bodySm" semiBold color={Colors.textPrimary} style={styles.dropdownLabel}>
+                    {active.label}
+                  </Text>
+                </View>
+              ) : (
+                <Text variant="bodySm" color={Colors.textSecondary} style={styles.dropdownLabel}>
+                  Select your accessibility need…
+                </Text>
+              );
+            })()}
+            <Ionicons
+              name={dropdownOpen ? "chevron-up" : "chevron-down"}
+              size={18}
+              color={Colors.textSecondary}
+            />
+          </Pressable>
+
+          {dropdownOpen && (
+            <View style={styles.dropdownList}>
+              {DISABILITY_OPTIONS.map((opt, i) => {
+                const isSelected = selectedNeed === opt.id;
+                return (
+                  <Pressable
+                    key={opt.id}
+                    style={[
+                      styles.dropdownItem,
+                      isSelected && styles.dropdownItemActive,
+                      i < DISABILITY_OPTIONS.length - 1 && styles.dropdownItemBorder,
+                    ]}
+                    onPress={() => {
+                      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                      setSelectedNeed(opt.id);
+                      setDropdownOpen(false);
+                      userService.setPreferences(opt.id, {}).catch(() => {});
+                    }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: isSelected }}
+                    accessibilityLabel={opt.label}
+                  >
+                    <Ionicons
+                      name={opt.icon as any}
+                      size={20}
+                      color={isSelected ? Colors.primary : Colors.textSecondary}
+                    />
+                    <View style={styles.needInfo}>
+                      <Text variant="bodySm" semiBold color={isSelected ? Colors.primary : Colors.textPrimary}>
+                        {opt.label}
+                      </Text>
+                      <Text variant="caption" color={Colors.textSecondary}>{opt.sub}</Text>
+                    </View>
+                    {isSelected && (
+                      <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
         </Section>
 
         {badges.length > 0 && (
-          <BadgeStrip badges={badges} onSeeAll={() => setShowAllBadges(true)} />
+          <View style={styles.badgeStripWrapper}>
+            <BadgeStrip badges={badges} onSeeAll={() => setShowAllBadges(true)} />
+          </View>
         )}
 
         {/* UI preferences */}
@@ -287,7 +384,31 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: Spacing.base,
   },
-  name: { marginBottom: Spacing.xs },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    marginBottom: Spacing.xs,
+  },
+  editIcon: { marginTop: 2 },
+  nameEditRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  nameInput: {
+    flex: 1,
+    fontSize: 22,
+    fontWeight: "700",
+    color: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.white + "60",
+    paddingVertical: 2,
+  },
+  nameSaveBtn: {
+    padding: Spacing.xs,
+  },
   badges: {
     flexDirection: "row",
     gap: Spacing.sm,
@@ -305,17 +426,49 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
   },
-  needRow: {
+  dropdownTrigger: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.base,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.background,
+  },
+  dropdownTriggerOpen: {
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    borderBottomColor: "transparent",
+  },
+  dropdownSelected: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    flex: 1,
+  },
+  dropdownLabel: { flex: 1 },
+  dropdownList: {
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderColor: Colors.border,
+    borderBottomLeftRadius: BorderRadius.md,
+    borderBottomRightRadius: BorderRadius.md,
+    backgroundColor: Colors.surface,
+    overflow: "hidden",
+  },
+  dropdownItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.md,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.base,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.xs,
   },
-  needRowActive: { backgroundColor: Colors.primary + "10" },
+  dropdownItemActive: { backgroundColor: Colors.primary + "08" },
+  dropdownItemBorder: { borderBottomWidth: 1, borderBottomColor: Colors.border },
   needInfo: { flex: 1 },
+  badgeStripWrapper: { marginTop: Spacing.xl },
   prefRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -351,12 +504,11 @@ const styles = StyleSheet.create({
 });
 
 const sectionStyles = StyleSheet.create({
-  container: { marginTop: Spacing.base, marginHorizontal: Spacing.base },
+  container: { marginTop: Spacing.xl, marginHorizontal: Spacing.xl },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: Spacing.base,
     paddingBottom: Spacing.sm,
   },
   title: { letterSpacing: 0.8 },

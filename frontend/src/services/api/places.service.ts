@@ -27,7 +27,6 @@ export interface NearbyPlace {
 
 const BASE = "https://maps.googleapis.com/maps/api/place";
 
-// Google Places types → our category labels
 const TYPE_TO_CATEGORY: Record<string, string> = {
   hospital: "Health",
   pharmacy: "Health",
@@ -43,7 +42,6 @@ const TYPE_TO_CATEGORY: Record<string, string> = {
   police: "Government",
 };
 
-// Category filter → Google Places types to search
 const CATEGORY_TYPES: Record<string, string[]> = {
   Health:     ["hospital", "pharmacy"],
   Government: ["local_government_office", "city_hall"],
@@ -51,8 +49,12 @@ const CATEGORY_TYPES: Record<string, string[]> = {
   Education:  ["school", "university"],
 };
 
-// "Near me" searches all of these in parallel
-const DEFAULT_TYPES = ["hospital", "school", "bank", "local_government_office"];
+const DEFAULT_TYPES = [
+  "hospital", "pharmacy",
+  "school", "university",
+  "bank", "atm",
+  "local_government_office", "city_hall", "post_office", "police",
+];
 
 function mapGoogleTypes(types: string[]): string {
   for (const t of types) {
@@ -135,10 +137,6 @@ export const placesService = {
     };
   },
 
-  /**
-   * Nearby Search using Google Places.
-   * categories = active category filters; empty/undefined = search all public service types.
-   */
   async nearbySearch(
     lat: number,
     lng: number,
@@ -149,7 +147,6 @@ export const placesService = {
         ? [...new Set(categories.flatMap((c) => CATEGORY_TYPES[c] ?? []))]
         : DEFAULT_TYPES;
 
-    // Run all type searches in parallel, merge & deduplicate by placeId
     const arrays = await Promise.all(types.map((t) => searchByType(lat, lng, t)));
     const seen = new Set<string>();
     const results: NearbyPlace[] = [];

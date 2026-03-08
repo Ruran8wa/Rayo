@@ -1,3 +1,5 @@
+import { Ionicons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts";
@@ -16,13 +18,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "@components/ui/button";
 import { Text } from "@components/ui/text";
 import { BorderRadius, Colors, FontFamily, FontSize, Shadow, Spacing } from "@constants/theme";
-import { buildingsService } from "@services/api/buildings.service";
+import { sitesService } from "@services/api/sites.service";
 import { reviewsService } from "@services/api/reviews.service";
-import type { AccessibilityLevel, Building } from "@/types";
+import type { Building, Site } from "@/types";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type Scope = "building" | "floor" | "service";
+type LocationMode = "site" | "custom";
 
 const SCOPES: { value: Scope; label: string; sub: string }[] = [
   { value: "building", label: "Whole building", sub: "Overall impression" },
@@ -38,9 +41,9 @@ const LEVELS: { value: "fully" | "partial" | "none"; label: string; color: strin
 
 export default function WriteReview() {
   const router = useRouter();
-  const { user, loading } = useAuth();
+  const queryClient = useQueryClient();
+  const { user, loading, refreshSession } = useAuth();
 
-  // Route params — set when coming from a building/unverified place
   const params = useLocalSearchParams<{
     buildingId?: string;
     buildingName?: string;
@@ -48,69 +51,118 @@ export default function WriteReview() {
     placeAddress?: string;
   }>();
 
-  // Building picker state (used when no context is passed)
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Building[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
+  const [locationMode, setLocationMode] = useState<LocationMode>("site");
+  const [sites, setSites] = useState<Site[]>([]);
+  const [sitesLoading, setSitesLoading] = useState(true);
+  const [expandedSiteId, setExpandedSiteId] = useState<string | null>(null);
+  const [loadingSiteId, setLoadingSiteId] = useState<string | null>(null);
+  const [siteBuildings, setSiteBuildings] = useState<Record<string, Building[]>>({});
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
+  const [customPlaceName, setCustomPlaceName] = useState("");
+  const [customPlaceAddress, setCustomPlaceAddress] = useState("");
 
-  // Review form state
   const [scope, setScope] = useState<Scope>("building");
   const [level, setLevel] = useState<"fully" | "partial" | "none" | null>(null);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Determine resolved building context from params
+  const hasParamContext = !!params.buildingId || !!params.placeName;
   const resolvedBuildingId = params.buildingId ?? selectedBuilding?.id;
   const resolvedBuildingName =
-    params.buildingName ?? selectedBuilding?.name ?? params.placeName ?? null;
+    (params.buildingName ?? selectedBuilding?.name ?? params.placeName ?? customPlaceName) || null;
 
-  // Whether the user needs to pick a building first
-  const needsBuildingPick = !params.buildingId && !params.placeName && !selectedBuilding;
+  const hasLocation =
+    hasParamContext ||
+    selectedBuilding != null ||
+    (locationMode === "custom" && customPlaceName.trim().length > 0);
 
-  // Hard guard — redirect unauthenticated users to sign-in
   useEffect(() => {
     if (!loading && !user) {
       router.replace("/(auth)/sign-in");
     }
   }, [user, loading]);
 
-  // Debounced building search
   useEffect(() => {
-    if (searchQuery.trim().length < 2) {
-      setSearchResults([]);
+    if (hasParamContext) return;
+    sitesService
+      .getAll()
+      .then(setSites)
+      .catch(() => setSites([]))
+      .finally(() => setSitesLoading(false));
+  }, []);
+
+  const handleSiteTap = async (siteId: string) => {
+    if (expandedSiteId === siteId) {
+      setExpandedSiteId(null);
       return;
     }
-    setSearchLoading(true);
-    const timer = setTimeout(() => {
-      buildingsService
-        .search(searchQuery.trim())
-        .then(setSearchResults)
-        .catch(() => setSearchResults([]))
-        .finally(() => setSearchLoading(false));
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+    setExpandedSiteId(siteId);
+    if (siteBuildings[siteId]) return;
+    setLoadingSiteId(siteId);
+    try {
+      const site = await sitesService.getById(siteId);
+      setSiteBuildings((prev) => ({ ...prev, [siteId]: site.buildings }));
+    } catch {
+      setSiteBuildings((prev) => ({ ...prev, [siteId]: [] }));
+    } finally {
+      setLoadingSiteId(null);
+    }
+  };
+
+  const handleBuildingSelect = (building: Building) => {
+    setSelectedBuilding(building);
+    setExpandedSiteId(null);
+  };
 
   const handleSubmit = async () => {
-    if (!level) return;
-    if (needsBuildingPick) return;
+    if (!level || !hasLocation) return;
 
     setSubmitting(true);
     setError(null);
-    try {
-      await reviewsService.create({
+
+    const doCreate = () =>
+      reviewsService.create({
         building_id: resolvedBuildingId,
-        place_name: !resolvedBuildingId ? (params.placeName ?? undefined) : undefined,
-        place_address: !resolvedBuildingId ? (params.placeAddress ?? undefined) : undefined,
+        place_name: !resolvedBuildingId
+          ? (params.placeName ?? (customPlaceName.trim() || undefined))
+          : undefined,
+        place_address: !resolvedBuildingId
+          ? (params.placeAddress ?? (customPlaceAddress.trim() || undefined))
+          : undefined,
         scope,
         accessibility_level: level,
         comment: comment.trim() || undefined,
       });
+
+    const invalidate = () => {
+      queryClient.invalidateQueries({ queryKey: ["my-reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["user-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["user-badges"] });
+    };
+
+    try {
+      await doCreate();
+      invalidate();
       router.back();
-    } catch {
-      setError("Failed to submit review. Please try again.");
+    } catch (err: any) {
+
+      if (err?.status === 401) {
+        try {
+          await refreshSession();
+          await doCreate();
+          invalidate();
+          router.back();
+          return;
+        } catch (refreshErr: any) {
+
+          router.replace("/(auth)/sign-in");
+          return;
+        }
+      }
+
+      const msg = err?.message ?? "Unknown error";
+      setError(`Submit failed (${err?.status ?? "?"}): ${msg}`);
     } finally {
       setSubmitting(false);
     }
@@ -126,7 +178,12 @@ export default function WriteReview() {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          <Pressable onPress={() => router.back()} style={styles.back} accessibilityRole="button" accessibilityLabel="Go back">
+          <Pressable
+            onPress={() => router.back()}
+            style={styles.back}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
             <Text variant="label" color={Colors.textSecondary}>← Back</Text>
           </Pressable>
 
@@ -134,57 +191,172 @@ export default function WriteReview() {
           <Text variant="body" color={Colors.textSecondary} style={styles.sub}>
             Help others know what to expect
           </Text>
+          {hasParamContext ? (
 
-          {/* Building context indicator or picker */}
-          {resolvedBuildingName ? (
-            <View style={styles.buildingBadge}>
-              <Text variant="bodySm" semiBold numberOfLines={1}>{resolvedBuildingName}</Text>
-              {!params.buildingId && !params.placeName && (
-                <Pressable onPress={() => setSelectedBuilding(null)}>
-                  <Text variant="caption" color={Colors.textSecondary}> Change</Text>
-                </Pressable>
-              )}
+            <View style={styles.locationBadge}>
+              <Ionicons name="location-outline" size={14} color={Colors.primary} />
+              <Text variant="bodySm" semiBold numberOfLines={1} style={styles.locationBadgeText}>
+                {resolvedBuildingName}
+              </Text>
+            </View>
+          ) : selectedBuilding ? (
+
+            <View style={styles.locationBadge}>
+              <Ionicons name="business-outline" size={14} color={Colors.primary} />
+              <Text variant="bodySm" semiBold numberOfLines={1} style={styles.locationBadgeText}>
+                {selectedBuilding.name}
+              </Text>
+              <Pressable onPress={() => setSelectedBuilding(null)} style={styles.changeTap}>
+                <Text variant="caption" color={Colors.textSecondary}>Change</Text>
+              </Pressable>
             </View>
           ) : (
+
             <View style={styles.pickerSection}>
-              <Text variant="label" semiBold color={Colors.textSecondary} style={styles.sectionLabel}>
-                WHICH BUILDING?
-              </Text>
-              <TextInput
-                style={styles.searchInput}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                placeholder="Search by building name..."
-                placeholderTextColor={Colors.textSecondary}
-                returnKeyType="search"
-                accessibilityLabel="Search for a building"
-              />
-              {searchLoading && (
-                <ActivityIndicator color={Colors.primary} style={styles.searchLoader} size="small" />
-              )}
-              {searchResults.map((b) => (
+              <View style={styles.modeToggle}>
                 <Pressable
-                  key={b.id}
-                  style={styles.resultRow}
-                  onPress={() => {
-                    setSelectedBuilding(b);
-                    setSearchQuery("");
-                    setSearchResults([]);
-                  }}
+                  style={[styles.modeBtn, locationMode === "site" && styles.modeBtnActive]}
+                  onPress={() => setLocationMode("site")}
+                  accessibilityRole="button"
                 >
-                  <Text variant="bodySm" semiBold numberOfLines={1}>{b.name}</Text>
-                  {!!b.address && (
-                    <Text variant="caption" color={Colors.textSecondary} numberOfLines={1}>{b.address}</Text>
-                  )}
+                  <Text
+                    variant="bodySm"
+                    semiBold
+                    color={locationMode === "site" ? Colors.white : Colors.textSecondary}
+                  >
+                    Known site
+                  </Text>
                 </Pressable>
-              ))}
+                <Pressable
+                  style={[styles.modeBtn, locationMode === "custom" && styles.modeBtnActive]}
+                  onPress={() => setLocationMode("custom")}
+                  accessibilityRole="button"
+                >
+                  <Text
+                    variant="bodySm"
+                    semiBold
+                    color={locationMode === "custom" ? Colors.white : Colors.textSecondary}
+                  >
+                    Other place
+                  </Text>
+                </Pressable>
+              </View>
+
+              {locationMode === "site" ? (
+
+                sitesLoading ? (
+                  <ActivityIndicator color={Colors.primary} style={styles.loader} />
+                ) : sites.length === 0 ? (
+                  <Text variant="bodySm" color={Colors.textSecondary} style={styles.emptyMsg}>
+                    No sites found.
+                  </Text>
+                ) : (
+                  <View style={styles.siteList}>
+                    {sites.map((site) => {
+                      const isExpanded = expandedSiteId === site.id;
+                      const buildings = siteBuildings[site.id] ?? [];
+                      return (
+                        <View key={site.id}>
+                          <Pressable
+                            style={[styles.siteRow, isExpanded && styles.siteRowExpanded]}
+                            onPress={() => handleSiteTap(site.id)}
+                            accessibilityRole="button"
+                            accessibilityLabel={site.name}
+                          >
+                            <View style={styles.siteInfo}>
+                              <Text variant="bodySm" semiBold numberOfLines={1}>{site.name}</Text>
+                              <Text variant="caption" color={Colors.textSecondary}>
+                                {site.category}
+                                {site.building_count > 0 ? ` · ${site.building_count} buildings` : ""}
+                              </Text>
+                            </View>
+                            {loadingSiteId === site.id ? (
+                              <ActivityIndicator size="small" color={Colors.primary} />
+                            ) : (
+                              <Ionicons
+                                name={isExpanded ? "chevron-up" : "chevron-down"}
+                                size={16}
+                                color={Colors.textSecondary}
+                              />
+                            )}
+                          </Pressable>
+
+                          {isExpanded && (
+                            <View style={styles.buildingList}>
+                              {buildings.length === 0 ? (
+                                <Text
+                                  variant="caption"
+                                  color={Colors.textSecondary}
+                                  style={styles.emptyMsg}
+                                >
+                                  No buildings found in this site.
+                                </Text>
+                              ) : (
+                                buildings.map((b) => (
+                                  <Pressable
+                                    key={b.id}
+                                    style={styles.buildingRow}
+                                    onPress={() => handleBuildingSelect(b)}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={b.name}
+                                  >
+                                    <Ionicons
+                                      name="business-outline"
+                                      size={14}
+                                      color={Colors.textSecondary}
+                                    />
+                                    <Text variant="bodySm" numberOfLines={1} style={styles.buildingName}>
+                                      {b.name}
+                                    </Text>
+                                    <Ionicons name="chevron-forward" size={14} color={Colors.primary} />
+                                  </Pressable>
+                                ))
+                              )}
+                            </View>
+                          )}
+                        </View>
+                      );
+                    })}
+                  </View>
+                )
+              ) : (
+
+                <View style={styles.customInputs}>
+                  <Text variant="label" semiBold color={Colors.textSecondary} style={styles.inputLabel}>
+                    PLACE NAME
+                  </Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={customPlaceName}
+                    onChangeText={setCustomPlaceName}
+                    placeholder="e.g. Kigali City Tower"
+                    placeholderTextColor={Colors.textSecondary}
+                    returnKeyType="next"
+                    accessibilityLabel="Place name"
+                  />
+                  <Text variant="label" semiBold color={Colors.textSecondary} style={[styles.inputLabel, styles.inputLabelTop]}>
+                    ADDRESS (OPTIONAL)
+                  </Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={customPlaceAddress}
+                    onChangeText={setCustomPlaceAddress}
+                    placeholder="e.g. KG 7 Ave, Kigali"
+                    placeholderTextColor={Colors.textSecondary}
+                    returnKeyType="done"
+                    accessibilityLabel="Place address"
+                  />
+                  {customPlaceName.trim().length > 0 && (
+                    <Text variant="caption" color={Colors.primary} style={styles.customHint}>
+                      ✓ Fill in your rating below
+                    </Text>
+                  )}
+                </View>
+              )}
             </View>
           )}
-
-          {/* Only show the form once a building context is resolved */}
-          {!needsBuildingPick && (
+          {hasLocation && (
             <>
-              {/* Scope */}
               <Text
                 variant="label"
                 semiBold
@@ -203,8 +375,6 @@ export default function WriteReview() {
                   />
                 ))}
               </View>
-
-              {/* Accessibility level */}
               <Text
                 variant="label"
                 semiBold
@@ -223,8 +393,6 @@ export default function WriteReview() {
                   />
                 ))}
               </View>
-
-              {/* Comment */}
               <Text
                 variant="label"
                 semiBold
@@ -337,9 +505,11 @@ const styles = StyleSheet.create({
   back: { marginBottom: Spacing.xxl },
   heading: { marginBottom: Spacing.sm },
   sub: { marginBottom: Spacing.xl },
-  buildingBadge: {
+
+  locationBadge: {
     flexDirection: "row",
     alignItems: "center",
+    gap: Spacing.sm,
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,
     borderWidth: 1.5,
@@ -347,10 +517,71 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.md,
     marginBottom: Spacing.base,
-    gap: Spacing.sm,
   },
+  locationBadgeText: { flex: 1 },
+  changeTap: { marginLeft: "auto" },
+
   pickerSection: { marginBottom: Spacing.base },
-  searchInput: {
+  modeToggle: {
+    flexDirection: "row",
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.pill,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 4,
+    marginBottom: Spacing.base,
+  },
+  modeBtn: {
+    flex: 1,
+    paddingVertical: Spacing.sm,
+    alignItems: "center",
+    borderRadius: BorderRadius.pill,
+  },
+  modeBtnActive: {
+    backgroundColor: Colors.primary,
+  },
+  loader: { marginVertical: Spacing.xl },
+  emptyMsg: { textAlign: "center", marginVertical: Spacing.base },
+
+  siteList: { gap: Spacing.sm },
+  siteRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    padding: Spacing.base,
+    ...Shadow.card,
+  },
+  siteRowExpanded: { borderColor: Colors.primary },
+  siteInfo: { flex: 1 },
+
+  buildingList: {
+    marginTop: 2,
+    marginBottom: Spacing.sm,
+    borderLeftWidth: 2,
+    borderLeftColor: Colors.primary + "40",
+    marginLeft: Spacing.base,
+    paddingLeft: Spacing.base,
+    gap: Spacing.xs,
+  },
+  buildingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.base,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  buildingName: { flex: 1 },
+
+  customInputs: { gap: Spacing.xs },
+  inputLabel: { letterSpacing: 0.8, marginBottom: 4 },
+  inputLabelTop: { marginTop: Spacing.base },
+  textInput: {
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,
     borderWidth: 1.5,
@@ -360,16 +591,8 @@ const styles = StyleSheet.create({
     fontSize: FontSize.body,
     color: Colors.textPrimary,
   },
-  searchLoader: { marginTop: Spacing.sm },
-  resultRow: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.base,
-    marginTop: Spacing.xs,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    gap: 2,
-  },
+  customHint: { marginTop: Spacing.sm },
+
   sectionLabel: {
     letterSpacing: 0.8,
     marginBottom: Spacing.md,

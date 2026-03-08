@@ -1,6 +1,3 @@
-/**
- * Environment variable type definitions
- */
 
 export interface EnvConfig {
   apiUrl: string;

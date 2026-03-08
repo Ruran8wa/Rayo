@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import * as Location from "expo-location";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE, type Region } from "react-native-maps";
@@ -19,7 +20,6 @@ import { BorderRadius, Colors, Shadow, Spacing } from "@constants/theme";
 
 const KIGALI_BOUNDS = { south: -2.0, west: 29.9, north: -1.8, east: 30.2 } as const;
 
-/** Snap the map back inside Kigali bounds if the user pans outside. */
 function clampRegion(region: Region, mapRef: React.RefObject<MapView | null>): void {
   const lat = Math.max(KIGALI_BOUNDS.south, Math.min(KIGALI_BOUNDS.north, region.latitude));
   const lng = Math.max(KIGALI_BOUNDS.west, Math.min(KIGALI_BOUNDS.east, region.longitude));
@@ -42,7 +42,7 @@ export default function MapTab() {
   const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);
   const pinPressId = useRef(0);
-  const { previewBuilding, previewSite, setSelectedBuilding, setPreviewSite, clearSelection } = useMapStore();
+  const { previewBuilding, previewSite, setPreviewSite, clearSelection } = useMapStore();
   const { mapSearchQuery, setMapSearch, activeMapCategory } = useFilterStore();
 
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -52,14 +52,35 @@ export default function MapTab() {
   const [selectingPlace, setSelectingPlace] = useState(false);
   const [pinLoading, setPinLoading] = useState(false);
   const [previewSiteName, setPreviewSiteName] = useState("");
+  const [showUserLocation, setShowUserLocation] = useState(false);
 
-  // Debounce search input
+  useEffect(() => {
+    if (activeMapCategory !== "Near me") {
+      setShowUserLocation(false);
+      return;
+    }
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") return;
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      setShowUserLocation(true);
+      mapRef.current?.animateToRegion(
+        {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          latitudeDelta: 0.02,
+          longitudeDelta: 0.02,
+        },
+        600
+      );
+    })();
+  }, [activeMapCategory]);
+
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(mapSearchQuery.trim()), 400);
     return () => clearTimeout(t);
   }, [mapSearchQuery]);
 
-  // Fetch Google Places autocomplete predictions
   useEffect(() => {
     if (debouncedQuery.length < 2) {
       setPredictions([]);
@@ -78,7 +99,6 @@ export default function MapTab() {
     queryFn: () => buildingsService.getGeoJSON(KIGALI_BOUNDS),
   });
 
-  // Filter pins by active category chip (case-insensitive keyword match against site_type)
   const CATEGORY_KEYWORDS: Record<string, string[]> = {
     Health:     ["health", "hospital", "medical", "clinic", "pharmacy"],
     Government: ["government", "gov", "municipal", "public", "ministry"],
@@ -104,35 +124,29 @@ export default function MapTab() {
     const thisPress = ++pinPressId.current;
     setPinLoading(true);
     try {
-      const building = await buildingsService.getById(id);
+      const site = await sitesService.getById(id);
       if (thisPress !== pinPressId.current) return;
       setUnverifiedPlace(null);
-      if (building.site_id) {
-        const site = await sitesService.getById(building.site_id);
-        if (thisPress !== pinPressId.current) return;
-        setPreviewSiteName(site.name);
-        setPreviewSite(site);
-      } else {
-        setSelectedBuilding(building);
-      }
+      setPreviewSiteName(site.name);
+      setPreviewSite(site);
     } catch (error) {
-      console.error("Failed to load building:", error);
+      console.error("Failed to load site:", error);
     } finally {
       if (thisPress === pinPressId.current) setPinLoading(false);
     }
   };
 
   const handlePredictionPress = async (prediction: PlacePrediction) => {
+    const thisPress = ++pinPressId.current;
     setMapSearch("");
     setPredictions([]);
     setSelectingPlace(true);
 
     try {
-      // 1. Get coordinates from Google
+
       const detail = await placesService.getDetails(prediction.placeId);
       if (!detail) return;
 
-      // 2. Pan the map to the place
       mapRef.current?.animateToRegion(
         {
           latitude: detail.latitude,
@@ -143,28 +157,24 @@ export default function MapTab() {
         500
       );
 
-      // 3. Check if it exists in our database
-      const dbResults = await buildingsService.nearby(detail.latitude, detail.longitude);
-      const dbMatch = dbResults.reduce<(typeof dbResults)[0] | null>((closest, b) => {
-        const dist = Math.hypot(b.latitude - detail.latitude, b.longitude - detail.longitude);
-        if (!closest) return b;
-        const closestDist = Math.hypot(closest.latitude - detail.latitude, closest.longitude - detail.longitude);
-        return dist < closestDist ? b : closest;
+      const MATCH_THRESHOLD_DEG = 0.00135;
+      const dbResults = await sitesService.nearby(detail.latitude, detail.longitude);
+      const dbMatch = dbResults.reduce<(typeof dbResults)[0] | null>((closest, s) => {
+        const dist = Math.hypot((s.lat ?? 0) - detail.latitude, (s.lng ?? 0) - detail.longitude);
+        if (dist > MATCH_THRESHOLD_DEG) return closest;
+        if (!closest) return s;
+        const closestDist = Math.hypot((closest.lat ?? 0) - detail.latitude, (closest.lng ?? 0) - detail.longitude);
+        return dist < closestDist ? s : closest;
       }, null);
 
       if (dbMatch) {
-        const full = await buildingsService.getById(dbMatch.id);
-        if (full.site_id) {
-          const site = await sitesService.getById(full.site_id);
-          setUnverifiedPlace(null);
-          setPreviewSiteName(site.name);
-          setPreviewSite(site);
-        } else {
-          setUnverifiedPlace(null);
-          setSelectedBuilding(full);
-        }
+        const fullSite = await sitesService.getById(dbMatch.id);
+        if (thisPress !== pinPressId.current) return;
+        setUnverifiedPlace(null);
+        setPreviewSiteName(fullSite.name);
+        setPreviewSite(fullSite);
       } else {
-        // Not in our system — show gray unverified pin + sheet
+
         clearSelection();
         setUnverifiedPlace(detail);
       }
@@ -195,7 +205,7 @@ export default function MapTab() {
         provider={PROVIDER_GOOGLE}
         initialRegion={INITIAL_REGION}
         minZoomLevel={11}
-        showsUserLocation={false}
+        showsUserLocation={showUserLocation}
         showsMyLocationButton={false}
         showsCompass={false}
         toolbarEnabled={false}
@@ -204,8 +214,6 @@ export default function MapTab() {
         {filteredGeojson != null && (filteredGeojson.features?.length ?? 0) > 0 && (
           <BuildingPins geojson={filteredGeojson} onPinPress={handlePinPress} />
         )}
-
-        {/* Gray pin for unverified Google place */}
         {unverifiedPlace && (
           <Marker
             coordinate={{
@@ -214,7 +222,7 @@ export default function MapTab() {
             }}
             tracksViewChanges={false}
             anchor={{ x: 0.5, y: 1 }}
-            onPress={() => {}} // keep sheet open
+            onPress={() => {}}
           >
             <View style={styles.grayPin}>
               <Text style={styles.grayPinLabel} numberOfLines={1}>
@@ -224,13 +232,9 @@ export default function MapTab() {
           </Marker>
         )}
       </MapView>
-
-      {/* Overlay: search bar, chips, results */}
       <View style={[styles.overlay, { paddingTop: insets.top + Spacing.sm }]}>
         <MapSearchBar />
         <CategoryChipRow />
-
-        {/* Predictions dropdown */}
         {showPredictions && (
           <View style={styles.resultsCard}>
             <ScrollView
@@ -261,22 +265,16 @@ export default function MapTab() {
             </ScrollView>
           </View>
         )}
-
-        {/* Loading spinner while selecting from autocomplete */}
         {predictionsLoading && debouncedQuery.length > 1 && predictions.length === 0 && (
           <View style={styles.loadingRow}>
             <ActivityIndicator size="small" color={Colors.primary} />
           </View>
         )}
-
-        {/* Loading spinner while a pin is loading */}
         {(pinLoading || selectingPlace) && (
           <View style={styles.loadingRow}>
             <ActivityIndicator size="small" color={Colors.primary} />
           </View>
         )}
-
-        {/* Empty state when active category filter has no buildings */}
         {activeMapCategory && activeMapCategory !== "Near me" &&
           filteredGeojson != null && (filteredGeojson.features?.length ?? 0) === 0 && (
           <View style={styles.loadingRow}>
@@ -286,8 +284,6 @@ export default function MapTab() {
           </View>
         )}
       </View>
-
-      {/* Bottom sheets — only one shows at a time */}
       <BuildingPreviewSheet
         building={previewBuilding}
         onClose={clearSelection}
@@ -357,7 +353,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     ...Shadow.card,
   },
-  // Gray unverified pin
+
   grayPin: {
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,

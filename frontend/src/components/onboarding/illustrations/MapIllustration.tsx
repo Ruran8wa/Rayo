@@ -8,19 +8,13 @@ const PIN_SIZE = 16;
 export function MapIllustration() {
   return (
     <View style={styles.container}>
-      {/* 2x2 grid */}
       <View style={styles.grid}>
         {[0, 1, 2, 3].map((i) => (
           <View key={i} style={styles.cell} />
         ))}
       </View>
-
-      {/* Horizontal divider line */}
       <View style={[styles.line, styles.lineH]} />
-      {/* Vertical divider line */}
       <View style={[styles.line, styles.lineV]} />
-
-      {/* Pins */}
       <Pin color="#1D3D2F" style={{ top: CELL * 0.3, left: CELL * 0.35 }} />
       <Pin color="#F59E0B" style={{ top: CELL * 0.2, left: CELL + GAP + CELL * 0.45 }} />
       <Pin color="#EF4444" style={{ top: CELL + GAP + CELL * 0.35, left: CELL * 0.55 }} />

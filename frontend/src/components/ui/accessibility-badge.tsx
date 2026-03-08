@@ -4,7 +4,7 @@ import { BorderRadius, Colors, Spacing } from "@constants/theme";
 import { Text } from "./text";
 
 import type { AccessibilityLevel } from "@/types";
-export type { AccessibilityLevel };  // re-export for backwards compatibility
+export type { AccessibilityLevel };
 
 const CONFIG: Record<AccessibilityLevel, { label: string; color: string }> = {
   fully:   { label: "Fully",   color: Colors.fullyAccessible },

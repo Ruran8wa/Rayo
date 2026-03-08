@@ -22,7 +22,6 @@ export function SitePreviewSheet({ site, placeName, placeAddress, onClose }: Pro
     <SimpleSheet visible={site != null} onClose={onClose}>
       {site && (
         <View style={styles.content}>
-          {/* Header */}
           <View style={styles.header}>
             <Text variant="h2" numberOfLines={2}>{placeName}</Text>
             {(placeAddress ?? site.address) ? (
@@ -31,16 +30,12 @@ export function SitePreviewSheet({ site, placeName, placeAddress, onClose }: Pro
               </Text>
             ) : null}
           </View>
-
-          {/* In-DB badge */}
           <View style={styles.dbBadge}>
             <Ionicons name="checkmark-circle" size={14} color={Colors.fullyAccessible} />
             <Text variant="caption" color={Colors.fullyAccessible}>
               {site.buildings.length} building{site.buildings.length !== 1 ? "s" : ""} in our system
             </Text>
           </View>
-
-          {/* Buildings list */}
           <ScrollView style={styles.buildingsList} showsVerticalScrollIndicator={false}>
             {site.buildings.map((building, i) => (
               <Pressable
@@ -51,7 +46,10 @@ export function SitePreviewSheet({ site, placeName, placeAddress, onClose }: Pro
                 ]}
                 onPress={() => {
                   onClose();
-                  router.push(`/building/${building.id}`);
+                  router.push({
+                    pathname: "/building/[id]",
+                    params: { id: building.id, siteId: site.id, siteName: site.name },
+                  });
                 }}
                 accessibilityRole="button"
                 accessibilityLabel={`View ${building.name}`}

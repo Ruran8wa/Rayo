@@ -19,7 +19,6 @@ import { UnverifiedPlaceSheet } from "@components/map/unverified-place-sheet";
 import { Chip } from "@components/ui/chip";
 import { Text } from "@components/ui/text";
 import { BorderRadius, Colors, FontFamily, FontSize, Shadow, Spacing } from "@constants/theme";
-import { buildingsService } from "@services/api/buildings.service";
 import {
   placesService,
   type NearbyPlace,
@@ -33,6 +32,8 @@ import type { Building, Site } from "@/types";
 
 const KIGALI_DEFAULT = { lat: -1.9441, lng: 30.0619 };
 
+const MATCH_THRESHOLD_DEG = 0.00135;
+
 const CATEGORY_ICONS: Record<string, React.ComponentProps<typeof Ionicons>["name"]> = {
   Health: "medical",
   Government: "business",
@@ -41,14 +42,14 @@ const CATEGORY_ICONS: Record<string, React.ComponentProps<typeof Ionicons>["name
   Other: "location",
 };
 
-// ─── Nearby place card (Google Places result) ──────────────────────────────
-
 function NearbyPlaceCard({
   place,
   onPress,
+  isKnown,
 }: {
   place: NearbyPlace;
   onPress: () => void;
+  isKnown: boolean;
 }) {
   const icon = CATEGORY_ICONS[place.category] ?? "location";
   return (
@@ -61,11 +62,20 @@ function NearbyPlaceCard({
           <Text variant="bodySm" semiBold style={styles.cardName} numberOfLines={1}>
             {place.name}
           </Text>
-          <View style={styles.unknownBadge}>
-            <Text variant="caption" color={Colors.textSecondary} semiBold>
-              Unknown
-            </Text>
-          </View>
+          {isKnown ? (
+            <View style={styles.knownBadge}>
+              <Ionicons name="checkmark-circle" size={12} color={Colors.fullyAccessible} />
+              <Text variant="caption" color={Colors.fullyAccessible} semiBold>
+                Verified
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.unknownBadge}>
+              <Text variant="caption" color={Colors.textSecondary} semiBold>
+                Unknown
+              </Text>
+            </View>
+          )}
         </View>
         <Text variant="caption" color={Colors.textSecondary} numberOfLines={1}>
           {place.address}
@@ -84,8 +94,6 @@ function NearbyPlaceCard({
   );
 }
 
-// ─── Main Browse screen ────────────────────────────────────────────────────
-
 export default function Browse() {
   const { browseSearchQuery, setBrowseSearch, activeBrowseFilters, toggleBrowseFilter } =
     useFilterStore();
@@ -98,32 +106,33 @@ export default function Browse() {
 
   const selectionId = useRef(0);
 
-  // Sheet state — only one open at a time
   const [selectedPlace, setSelectedPlace] = useState<NearbyPlace | null>(null);
   const [previewBuilding, setPreviewBuilding] = useState<Building | null>(null);
   const [unverifiedPlace, setUnverifiedPlace] = useState<PlaceDetail | null>(null);
   const [previewSite, setPreviewSite] = useState<Site | null>(null);
   const [previewSiteName, setPreviewSiteName] = useState("");
 
-  // Get user location once on mount
-  useEffect(() => {
-    (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") return;
-      const pos = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-    })();
-  }, []);
+  const fetchLocation = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") return;
+    const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+    setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+  };
 
-  // Debounce search input
+  useEffect(() => { fetchLocation(); }, []);
+
+  const nearMeActive = activeBrowseFilters.includes("Near me") && activeBrowseFilters.length === 1;
+  const prevNearMeActive = useRef(nearMeActive);
+  useEffect(() => {
+    if (nearMeActive && !prevNearMeActive.current) fetchLocation();
+    prevNearMeActive.current = nearMeActive;
+  }, [nearMeActive]);
+
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(browseSearchQuery.trim()), 400);
     return () => clearTimeout(t);
   }, [browseSearchQuery]);
 
-  // Fetch Google Places autocomplete predictions
   useEffect(() => {
     if (debouncedQuery.length < 2) {
       setPredictions([]);
@@ -137,10 +146,14 @@ export default function Browse() {
       .finally(() => setPredictionsLoading(false));
   }, [debouncedQuery, location]);
 
-  // Active category filters (everything except "Near me")
   const activeCategories = activeBrowseFilters.filter((f) => f !== "Near me");
 
-  // Fetch nearby places — refetches when location or active categories change
+  const { data: allSites = [] } = useQuery({
+    queryKey: ["sites-all"],
+    queryFn: () => sitesService.getAll(),
+    staleTime: 1000 * 60 * 10,
+  });
+
   const { data: nearbyPlaces = [], isFetching } = useQuery({
     queryKey: ["nearby", location.lat, location.lng, activeCategories.slice().sort().join(",")],
     queryFn: () =>
@@ -152,7 +165,6 @@ export default function Browse() {
     staleTime: 1000 * 60 * 5,
   });
 
-  // Tap a nearby card — check DB first, show the right sheet
   const handleCardPress = async (place: NearbyPlace) => {
     const thisSelection = ++selectionId.current;
     setSelectingPlace(true);
@@ -163,39 +175,33 @@ export default function Browse() {
     setUnverifiedPlace(null);
 
     try {
-      const dbResults = await buildingsService.nearby(place.latitude, place.longitude);
+      const dbResults = await sitesService.nearby(place.latitude, place.longitude);
       if (thisSelection !== selectionId.current) return;
 
-      const dbMatch = dbResults.reduce<(typeof dbResults)[0] | null>((closest, b) => {
-        const dist = Math.hypot(b.latitude - place.latitude, b.longitude - place.longitude);
-        if (!closest) return b;
-        const closestDist = Math.hypot(closest.latitude - place.latitude, closest.longitude - place.longitude);
-        return dist < closestDist ? b : closest;
+      const dbMatch = dbResults.reduce<(typeof dbResults)[0] | null>((closest, s) => {
+        const dist = Math.hypot((s.lat ?? 0) - place.latitude, (s.lng ?? 0) - place.longitude);
+        if (dist > MATCH_THRESHOLD_DEG) return closest;
+        if (!closest) return s;
+        const closestDist = Math.hypot((closest.lat ?? 0) - place.latitude, (closest.lng ?? 0) - place.longitude);
+        return dist < closestDist ? s : closest;
       }, null);
 
       if (dbMatch) {
-        const full = await buildingsService.getById(dbMatch.id);
+        const fullSite = await sitesService.getById(dbMatch.id);
         if (thisSelection !== selectionId.current) return;
-        if (full.site_id) {
-          const site = await sitesService.getById(full.site_id);
-          if (thisSelection !== selectionId.current) return;
-          setPreviewSiteName(site.name);
-          setPreviewSite(site);
-        } else {
-          setPreviewBuilding(full);
-        }
+        setPreviewSiteName(fullSite.name);
+        setPreviewSite(fullSite);
       } else {
-        setSelectedPlace(place); // not in our system — show "be first to review" sheet
+        setSelectedPlace(place);
       }
     } catch (error) {
       console.error("Failed to resolve nearby place:", error);
-      setSelectedPlace(place); // fallback to simple sheet on error
+      setSelectedPlace(place);
     } finally {
       if (thisSelection === selectionId.current) setSelectingPlace(false);
     }
   };
 
-  // Tap an autocomplete prediction — check DB, show the right sheet
   const handlePredictionPress = async (prediction: PlacePrediction) => {
     const thisSelection = ++selectionId.current;
     setBrowseSearch("");
@@ -206,32 +212,25 @@ export default function Browse() {
       const detail = await placesService.getDetails(prediction.placeId);
       if (!detail || thisSelection !== selectionId.current) return;
 
-      const dbResults = await buildingsService.nearby(detail.latitude, detail.longitude);
+      const dbResults = await sitesService.nearby(detail.latitude, detail.longitude);
       if (thisSelection !== selectionId.current) return;
 
-      const dbMatch = dbResults.reduce<(typeof dbResults)[0] | null>((closest, b) => {
-        const dist = Math.hypot(b.latitude - detail.latitude, b.longitude - detail.longitude);
-        if (!closest) return b;
-        const closestDist = Math.hypot(closest.latitude - detail.latitude, closest.longitude - detail.longitude);
-        return dist < closestDist ? b : closest;
+      const dbMatch = dbResults.reduce<(typeof dbResults)[0] | null>((closest, s) => {
+        const dist = Math.hypot((s.lat ?? 0) - detail.latitude, (s.lng ?? 0) - detail.longitude);
+        if (dist > MATCH_THRESHOLD_DEG) return closest;
+        if (!closest) return s;
+        const closestDist = Math.hypot((closest.lat ?? 0) - detail.latitude, (closest.lng ?? 0) - detail.longitude);
+        return dist < closestDist ? s : closest;
       }, null);
 
       setSelectedPlace(null);
       if (dbMatch) {
-        const full = await buildingsService.getById(dbMatch.id);
+        const fullSite = await sitesService.getById(dbMatch.id);
         if (thisSelection !== selectionId.current) return;
-        if (full.site_id) {
-          const site = await sitesService.getById(full.site_id);
-          if (thisSelection !== selectionId.current) return;
-          setUnverifiedPlace(null);
-          setPreviewSiteName(site.name);
-          setPreviewBuilding(null);
-          setPreviewSite(site);
-        } else {
-          setUnverifiedPlace(null);
-          setPreviewBuilding(full);
-          setPreviewSite(null);
-        }
+        setUnverifiedPlace(null);
+        setPreviewBuilding(null);
+        setPreviewSiteName(fullSite.name);
+        setPreviewSite(fullSite);
       } else {
         setPreviewBuilding(null);
         setPreviewSite(null);
@@ -256,9 +255,13 @@ export default function Browse() {
       <FlatList
         data={nearbyPlaces}
         keyExtractor={(p) => p.placeId}
-        renderItem={({ item }) => (
-          <NearbyPlaceCard place={item} onPress={() => handleCardPress(item)} />
-        )}
+        renderItem={({ item }) => {
+          const isKnown = allSites.some((s) =>
+            s.lat != null && s.lng != null &&
+            Math.hypot(s.lat - item.latitude, s.lng - item.longitude) <= MATCH_THRESHOLD_DEG
+          );
+          return <NearbyPlaceCard place={item} onPress={() => handleCardPress(item)} isKnown={isKnown} />;
+        }}
         contentContainerStyle={styles.list}
         keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
@@ -269,8 +272,6 @@ export default function Browse() {
             <Text variant="bodySm" color={Colors.textSecondary} style={styles.subheading}>
               Public services near you
             </Text>
-
-            {/* Search bar */}
             <View style={styles.searchBar}>
               <RNText style={styles.searchBrand}>rayo</RNText>
               <View style={styles.searchDivider} />
@@ -295,8 +296,6 @@ export default function Browse() {
                 />
               )}
             </View>
-
-            {/* Autocomplete predictions dropdown */}
             {(showPredictions || (predictionsLoading && debouncedQuery.length > 1)) && (
               <View style={styles.predictionsCard}>
                 {predictionsLoading && predictions.length === 0 ? (
@@ -346,8 +345,6 @@ export default function Browse() {
                 </Text>
               </View>
             )}
-
-            {/* Filter chips */}
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -378,13 +375,9 @@ export default function Browse() {
           )
         }
       />
-
-      {/* Nearby card tap → simple place info sheet */}
       {selectedPlace && (
         <PlaceDetailSheet place={selectedPlace} onClose={() => setSelectedPlace(null)} />
       )}
-
-      {/* Autocomplete search → DB match or unverified */}
       <BuildingPreviewSheet
         building={previewBuilding}
         onClose={() => setPreviewBuilding(null)}
@@ -401,8 +394,6 @@ export default function Browse() {
     </SafeAreaView>
   );
 }
-
-// ─── Simple sheet for a nearby card tap ────────────────────────────────────
 
 import { useRouter } from "expo-router";
 import { SimpleSheet } from "@components/ui/simple-sheet";
@@ -479,8 +470,6 @@ function PlaceDetailSheet({
   );
 }
 
-// ─── Styles ────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   heading: { paddingHorizontal: Spacing.xl, paddingTop: Spacing.xl, marginBottom: 2 },
@@ -551,7 +540,6 @@ const styles = StyleSheet.create({
   },
   emptyText: { textAlign: "center" },
 
-  // NearbyPlaceCard
   card: {
     flexDirection: "row",
     backgroundColor: Colors.surface,
@@ -586,9 +574,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
   },
+  knownBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: Colors.fullyAccessible + "15",
+    borderRadius: BorderRadius.pill,
+    borderWidth: 1,
+    borderColor: Colors.fullyAccessible + "50",
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+  },
   ratingRow: { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 3 },
 
-  // PlaceDetailSheet
   sheetContent: {
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.base,

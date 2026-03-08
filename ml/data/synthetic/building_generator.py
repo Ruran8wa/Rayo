@@ -7,7 +7,6 @@ from distribution import (
 from floor_generator import generate_floor
 from utils import compute_building_score, classify
 
-
 def generate_building(building_id, site_type):
     floor_distribution = SITE_STRUCTURE_RULES[site_type]["floors"]
     total_floors = sample_from_distribution(floor_distribution)

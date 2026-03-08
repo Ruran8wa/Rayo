@@ -2,7 +2,6 @@ import random
 from distribution import random_bool, PROBABILITIES, SITE_STRUCTURE_RULES
 from rules import mobility_access_logic, correlated_signage
 
-
 def generate_floor(floor_level, step_free_entrance, elevator_present, site_type):
     mobility_accessible = mobility_access_logic(
         floor_level,
@@ -13,10 +12,6 @@ def generate_floor(floor_level, step_free_entrance, elevator_present, site_type)
     clear_signage = random_bool(PROBABILITIES["clear_signage"])
     high_contrast_signage = correlated_signage(clear_signage)
     written_instructions = random_bool(PROBABILITIES["written_instructions"])
-
-    # -----------------------------
-    # SERVICE GENERATION
-    # -----------------------------
 
     service_range = (
         SITE_STRUCTURE_RULES[site_type]["services_ground"]
@@ -31,7 +26,6 @@ def generate_floor(floor_level, step_free_entrance, elevator_present, site_type)
     for i in range(num_services):
         accessible = 1 if mobility_accessible else 0
 
-        # add small realism noise
         if accessible == 1 and random.random() < 0.1:
             accessible = 0
 

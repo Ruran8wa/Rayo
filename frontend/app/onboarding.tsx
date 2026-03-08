@@ -134,7 +134,6 @@ function SlideFooter({
 
   return (
     <View style={[footerStyles.container, { pointerEvents: isVisible ? "auto" : "none" }]}>
-      {/* Progress dots */}
       <View style={footerStyles.dots}>
         {Array.from({ length: total }).map((_, di) => (
           <View

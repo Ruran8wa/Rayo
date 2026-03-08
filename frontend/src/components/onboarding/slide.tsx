@@ -23,10 +23,7 @@ export function OnboardingSlide({
 }: Props) {
   return (
     <View style={styles.slide}>
-      {/* Top — dark green illustration zone */}
       <View style={styles.top}>{illustration}</View>
-
-      {/* Bottom — white card */}
       <View style={styles.card}>
         <View
           style={styles.badge}

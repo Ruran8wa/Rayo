@@ -31,12 +31,12 @@ export const useMapStore = create<MapState>((set) => ({
     set({
       selectedBuildingId: building?.id ?? null,
       previewBuilding: building,
-      previewSite: null,       // mutually exclusive
+      previewSite: null,
     }),
   setPreviewSite: (site) =>
     set({
       previewSite: site,
-      previewBuilding: null,   // mutually exclusive
+      previewBuilding: null,
       selectedBuildingId: null,
     }),
   setMapRegion: (region) => set({ mapRegion: region }),

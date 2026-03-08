@@ -10,6 +10,7 @@ import { BorderRadius, Colors, Spacing } from "@constants/theme";
 import { buildingsService } from "@services/api/buildings.service";
 import { reviewsService, type ReviewRecord } from "@services/api/reviews.service";
 import { useRequireAuth } from "@hooks/use-require-auth";
+import { useAuth } from "@contexts/AuthContext";
 
 const { width: W } = Dimensions.get("window");
 
@@ -23,6 +24,13 @@ const LEVEL_LABELS: Record<string, string> = {
   fully: "Fully Accessible",
   partial: "Partially Accessible",
   none: "Not Accessible",
+};
+
+const FEATURE_ICONS: Record<string, React.ComponentProps<typeof Ionicons>["name"]> = {
+  "Step-free entrance": "git-merge-outline",
+  "Elevator": "arrow-up-outline",
+  "Handrails": "hand-left-outline",
+  "Ramp": "trending-up-outline",
 };
 
 function ReviewCard({ review }: { review: ReviewRecord }) {
@@ -52,11 +60,14 @@ function ReviewCard({ review }: { review: ReviewRecord }) {
 }
 
 export default function BuildingDetail() {
-  const params = useLocalSearchParams<{ id: string | string[] }>();
+  const params = useLocalSearchParams<{ id: string | string[]; siteId?: string; siteName?: string }>();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
+  const siteId = Array.isArray(params.siteId) ? params.siteId[0] : params.siteId;
+  const siteName = Array.isArray(params.siteName) ? params.siteName[0] : params.siteName;
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const withAuth = useRequireAuth();
+  const { user } = useAuth();
 
   const { data: building, isLoading, isError } = useQuery({
     queryKey: ["building", id],
@@ -68,6 +79,7 @@ export default function BuildingDetail() {
     queryKey: ["reviews", id],
     queryFn: () => reviewsService.getByBuilding(id!),
     enabled: !!id,
+    staleTime: 0,
   });
 
   if (isLoading) {
@@ -89,47 +101,101 @@ export default function BuildingDetail() {
   return (
     <FlatList
       style={styles.container}
-      data={building.floors ?? []}
-      keyExtractor={(f) => f.id}
-      renderItem={({ item }) => <FloorCard floor={item} />}
-      horizontal={false}
+      data={[]}
+      keyExtractor={() => ""}
+      renderItem={null}
       showsVerticalScrollIndicator={false}
       ListHeaderComponent={
         <>
-          {/* Dark green header */}
           <View style={[styles.header, { paddingTop: insets.top + Spacing.sm }]}>
-            <Pressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button">
+            <Pressable
+              onPress={() => siteId
+                ? router.replace({ pathname: "/site/[id]", params: { id: siteId, name: siteName } })
+                : router.back()
+              }
+              style={styles.backBtn}
+              accessibilityRole="button"
+            >
               <Ionicons name="chevron-back" size={22} color={Colors.white} />
             </Pressable>
+            <View style={styles.nameRow}>
+              <Text variant="h1" color={Colors.white} style={styles.name}>
+                {building.name}
+              </Text>
+              {building.accessibility_level !== "unknown" && (
+                <View style={[
+                  styles.accessBadge,
+                  { backgroundColor: LEVEL_COLORS[building.accessibility_level] + "30",
+                    borderColor: LEVEL_COLORS[building.accessibility_level] + "80" },
+                ]}>
+                  <Ionicons
+                    name={building.accessibility_level === "fully" ? "checkmark-circle" : building.accessibility_level === "partial" ? "remove-circle" : "close-circle"}
+                    size={11}
+                    color={building.accessibility_level === "fully" ? "#4ADE80" : LEVEL_COLORS[building.accessibility_level]}
+                  />
+                  <Text
+                    variant="caption"
+                    semiBold
+                    color={building.accessibility_level === "fully" ? "#4ADE80" : LEVEL_COLORS[building.accessibility_level]}
+                  >
+                    {LEVEL_LABELS[building.accessibility_level]}
+                  </Text>
+                </View>
+              )}
+            </View>
 
-            <Text variant="h1" color={Colors.white} style={styles.name}>
-              {building.name}
-            </Text>
-            <Text variant="bodySm" color={Colors.white + "B3"} style={styles.address}>
-              {building.address}
-            </Text>
+            {building.site_name && (
+              <View style={styles.siteRow}>
+                <Ionicons name="business-outline" size={12} color={Colors.white + "BB"} />
+                <Text variant="caption" color={Colors.white + "BB"}>{building.site_name}</Text>
+              </View>
+            )}
+            {!!building.address && (
+              <Text variant="caption" color={Colors.white + "80"} style={styles.address}>
+                {building.address}
+              </Text>
+            )}
 
             <View style={styles.chips}>
-              <View style={styles.chip}>
-                <Ionicons name="time-outline" size={12} color={Colors.white} />
-                <Text variant="caption" color={Colors.white}>
-                  {building.is_open ? "Open now" : "Closed"}
-                </Text>
-              </View>
               {building.floor_count > 0 && (
                 <View style={styles.chip}>
-                  <Text variant="caption" color={Colors.white}>{building.floor_count} floors</Text>
+                  <Ionicons name="layers-outline" size={12} color={Colors.white} />
+                  <Text variant="caption" color={Colors.white}>{building.floor_count} floor{building.floor_count !== 1 ? "s" : ""}</Text>
                 </View>
               )}
               {building.distance_km != null && (
                 <View style={styles.chip}>
-                  <Text variant="caption" color={Colors.white}>{building.distance_km} km</Text>
+                  <Ionicons name="navigate-outline" size={12} color={Colors.white} />
+                  <Text variant="caption" color={Colors.white}>{building.distance_km} km away</Text>
                 </View>
               )}
+              {building.category ? (
+                <View style={styles.chip}>
+                  <Text variant="caption" color={Colors.white}>{building.category}</Text>
+                </View>
+              ) : null}
             </View>
           </View>
-
-          {/* Floors section header */}
+          <DisabilityBar building={building} userDisability={user?.disability_type} />
+          {(building.features ?? []).length > 0 && (
+            <View style={styles.featuresSection}>
+              <Text variant="label" color={Colors.textSecondary} semiBold style={styles.sectionLabel}>
+                FEATURES
+              </Text>
+              <View style={styles.featuresRow}>
+                {building.features.map((feat) => (
+                  <View key={feat} style={styles.featureChip}>
+                    <Ionicons
+                      name={FEATURE_ICONS[feat] ?? "checkmark-circle-outline"}
+                      size={13}
+                      color={Colors.fullyAccessible}
+                    />
+                    <Text variant="caption" semiBold color={Colors.fullyAccessible}>{feat}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
           <View style={styles.floorsSection}>
             <Text variant="label" color={Colors.textSecondary} semiBold style={styles.sectionLabel}>
               FLOORS — SWIPE TO EXPLORE
@@ -154,8 +220,6 @@ export default function BuildingDetail() {
               }
             />
           </View>
-
-          {/* Reviews section header */}
           <View style={styles.reviewsHeader}>
             <Text variant="label" color={Colors.textSecondary} semiBold style={styles.sectionLabel}>
               COMMUNITY REVIEWS ({reviews.length})
@@ -197,15 +261,120 @@ export default function BuildingDetail() {
   );
 }
 
+const DISABILITY_EMPHASIS: Record<string, "mobility" | "visual" | "hearing"> = {
+  mobility: "mobility",
+  "mobility impairment": "mobility",
+  visual: "visual",
+  "visual impairment": "visual",
+  hearing: "hearing",
+  "hearing impairment": "hearing",
+};
+
+function DisabilityBar({
+  building,
+  userDisability,
+}: {
+  building: ReturnType<typeof buildingsService.getById> extends Promise<infer T> ? T : never;
+  userDisability?: string;
+}) {
+  const userNeed = userDisability
+    ? DISABILITY_EMPHASIS[userDisability.toLowerCase()] ?? null
+    : null;
+
+  const features = building.features ?? [];
+  const hasMobility =
+    features.some((f) =>
+      ["step-free entrance", "ramp", "elevator", "handrails"].some((kw) =>
+        f.toLowerCase().includes(kw)
+      )
+    );
+
+  const floors = building.floors ?? [];
+  const hasVisual = floors.some((f) => f.high_contrast_signage || f.clear_signage);
+  const hasHearing = floors.some((f) => f.clear_signage);
+
+  const items: { key: "mobility" | "visual" | "hearing"; label: string; icon: React.ComponentProps<typeof Ionicons>["name"]; ok: boolean }[] = [
+    { key: "mobility", label: "Mobility", icon: "walk-outline", ok: hasMobility },
+    { key: "visual",   label: "Visual",   icon: "eye-outline",  ok: hasVisual },
+    { key: "hearing",  label: "Hearing",  icon: "ear-outline",  ok: hasHearing },
+  ];
+
+  return (
+    <View style={dbStyles.bar}>
+      {items.map((item) => {
+        const isMe = item.key === userNeed;
+        const color = item.ok ? Colors.fullyAccessible : Colors.notAccessible;
+        return (
+          <View
+            key={item.key}
+            style={[
+              dbStyles.item,
+              { backgroundColor: color + (isMe ? "18" : "0D"), borderColor: color + (isMe ? "BB" : "40") },
+              isMe && dbStyles.itemMe,
+            ]}
+          >
+            <Ionicons name={item.icon} size={13} color={color} />
+            <Text variant="caption" semiBold={isMe} color={color} style={dbStyles.itemLabel}>
+              {item.label}
+            </Text>
+            <Ionicons
+              name={item.ok ? "checkmark-circle" : "close-circle"}
+              size={13}
+              color={color}
+              style={dbStyles.statusIcon}
+            />
+            {isMe && (
+              <View style={dbStyles.youTag}>
+                <Text style={dbStyles.youText}>You</Text>
+              </View>
+            )}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+const dbStyles = StyleSheet.create({
+  bar: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.base,
+    paddingBottom: Spacing.base,
+    backgroundColor: Colors.background,
+  },
+  item: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    borderWidth: 1,
+    borderRadius: BorderRadius.pill,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    minWidth: 80,
+  },
+  itemMe: { borderWidth: 1.5 },
+  itemLabel: { flex: 1 },
+  statusIcon: { marginLeft: "auto" },
+  youTag: {
+    borderRadius: BorderRadius.pill,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    backgroundColor: Colors.primary + "20",
+  },
+  youText: { fontSize: 9, color: Colors.primary, fontWeight: "700" },
+});
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   loading: { flex: 1, alignItems: "center", justifyContent: "center" },
 
-  // Header
   header: {
     backgroundColor: Colors.primary,
     paddingHorizontal: Spacing.xl,
-    paddingBottom: Spacing.xl,
+    paddingBottom: Spacing.lg,
   },
   backBtn: {
     width: 36,
@@ -217,9 +386,27 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.base,
     alignSelf: "flex-start",
   },
-  name: { marginBottom: Spacing.xs },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  name: { flex: 1 },
+  accessBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderWidth: 1,
+    borderRadius: BorderRadius.pill,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    marginTop: 5,
+    alignSelf: "flex-start",
+  },
+  siteRow: { flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 },
   address: { marginBottom: Spacing.base },
-  chips: { flexDirection: "row", gap: Spacing.sm, flexWrap: "wrap" },
+  chips: { flexDirection: "row", gap: Spacing.sm, flexWrap: "wrap", marginTop: Spacing.base },
   chip: {
     flexDirection: "row",
     alignItems: "center",
@@ -231,8 +418,32 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
   },
 
-  // Floors
-  floorsSection: { paddingTop: Spacing.xl },
+  featuresSection: {
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.base,
+    paddingBottom: Spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  featuresRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  featureChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: Colors.fullyAccessible + "10",
+    borderWidth: 1,
+    borderColor: Colors.fullyAccessible + "40",
+    borderRadius: BorderRadius.pill,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+  },
+
+  floorsSection: { paddingTop: Spacing.xl, borderTopWidth: 1, borderTopColor: Colors.border },
   sectionLabel: {
     paddingHorizontal: Spacing.xl,
     marginBottom: Spacing.base,
@@ -250,13 +461,14 @@ const styles = StyleSheet.create({
   },
   emptyText: { textAlign: "center" },
 
-  // Reviews
   reviewsHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingRight: Spacing.xl,
-    paddingTop: Spacing.sm,
+    paddingTop: Spacing.xl,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
   },
   writeBtn: {
     flexDirection: "row",
