@@ -6,8 +6,8 @@ Rayo helps people with disabilities find and navigate accessible buildings in Ki
 
 | | Link |
 |-|------|
-| 5-minute demo video | *(coming soon)* |
-| Android APK | *(coming soon)* |
+| 5-minute demo video | https://drive.google.com/file/d/1cI24OmHRgQGxgDV9sAh8GHJ2D36zDWN1/view?usp=sharing |
+| Android APK | https://drive.google.com/file/d/1D2ygFS090k9H4RnuvbWfcXi-TLgxeikG/view?usp=sharing |
 
 ## Deployed Services
 
