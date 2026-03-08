@@ -42,10 +42,10 @@ Rayo/
 
 ## Tech Stack
 
-- **Frontend:** React Native (Expo), Expo Router, React Query, Mapbox, TypeScript
+- **Frontend:** React Native (Expo), Expo Router, React Query, React Native Maps, TypeScript
 - **Backend:** NestJS, Prisma ORM, PostgreSQL (Supabase), Supabase Auth
 - **ML:** Python, scikit-learn, FastAPI
-- **External APIs:** Google Places API, Mapbox
+- **External APIs:** Google Places API, Google Maps
 
 ---
 
@@ -72,7 +72,6 @@ Create `frontend/.env`:
 
 ```env
 EXPO_PUBLIC_API_URL=https://rayo-backend-hzh7.onrender.com/api
-EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN=<your-mapbox-token>
 EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=<your-google-maps-key>
 ```
 
@@ -144,7 +143,6 @@ Create `frontend/.env`:
 
 ```env
 EXPO_PUBLIC_API_URL=http://<your-local-ip>:3000/api
-EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN=<your-mapbox-token>
 EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=<your-google-maps-key>
 ```
 
