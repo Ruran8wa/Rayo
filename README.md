@@ -15,8 +15,8 @@ Rayo helps people with disabilities find and navigate accessible buildings in Ki
 |---------|-----|
 | Backend API | https://rayo-backend-hzh7.onrender.com/api |
 | Backend API Docs (Swagger) | https://rayo-backend-hzh7.onrender.com/api/docs |
-| ML API | *(not yet deployed)* |
-| ML API Docs | *(not yet deployed)* |
+| ML API | https://rayo-ml-api.onrender.com |
+| ML API Docs | https://rayo-ml-api.onrender.com/docs |
 
 ## Project Structure
 
