@@ -1,8 +1,6 @@
-# Rayo — Accessibility Navigation App
+# Rayo: Accessibility Navigation App
 
 Rayo helps people with disabilities find and navigate accessible buildings in Kigali, Rwanda. Explore a live map, browse nearby places, view floor-by-floor accessibility details, and submit community reviews.
-
----
 
 ## Demo & Downloads
 
@@ -10,8 +8,6 @@ Rayo helps people with disabilities find and navigate accessible buildings in Ki
 |-|------|
 | 5-minute demo video | *(coming soon)* |
 | Android APK | *(coming soon)* |
-
----
 
 ## Deployed Services
 
@@ -22,23 +18,19 @@ Rayo helps people with disabilities find and navigate accessible buildings in Ki
 | ML API | *(not yet deployed)* |
 | ML API Docs | *(not yet deployed)* |
 
----
-
 ## Project Structure
 
 ```
 Rayo/
-├── backend/        NestJS REST API — auth, buildings, sites, reviews, badges
-├── frontend/       React Native mobile app — Expo + Expo Router
-└── ml/             Accessibility prediction model — FastAPI + scikit-learn
+├── backend/        NestJS REST API: auth, buildings, sites, reviews, badges
+├── frontend/       React Native mobile app: Expo + Expo Router
+└── ml/             Accessibility prediction model: FastAPI + scikit-learn
     ├── api/            FastAPI prediction endpoint
     ├── data/           Synthetic + real-world datasets
     ├── models/         Trained model artifacts
     ├── notebooks/      Training & validation notebooks
     └── scripts/        Data processing & prediction scripts
 ```
-
----
 
 ## Tech Stack
 
@@ -47,16 +39,12 @@ Rayo/
 - **ML:** Python, scikit-learn, FastAPI
 - **External APIs:** Google Places API, Google Maps
 
----
-
 ## Prerequisites
 
 - [Git](https://git-scm.com/)
 - [Node.js](https://nodejs.org/) ≥ 18 and npm
 - [Python](https://python.org/) ≥ 3.11
 - [Expo Go](https://expo.dev/go) installed on your phone (iOS or Android), **or** Android Studio with an emulator
-
----
 
 ## Quickest Way to Run (Frontend Only)
 
@@ -82,8 +70,6 @@ npx expo start
 Scan the QR code with Expo Go on your phone, or press `a` to open on an Android emulator.
 
 > If Expo fails to connect to its servers (e.g. no internet access during startup), run `npx expo start --offline` instead.
-
----
 
 ## Full Local Setup
 
@@ -120,7 +106,7 @@ npx prisma migrate deploy
 npm run start:dev
 ```
 
-API runs at `http://localhost:3000/api` — Swagger docs at `http://localhost:3000/api/docs`.
+API runs at `http://localhost:3000/api`: Swagger docs at `http://localhost:3000/api/docs`.
 
 ### 3. ML Service
 
@@ -130,7 +116,7 @@ pip install -r requirements.txt
 uvicorn api.main:app --reload --port 8000
 ```
 
-ML API runs at `http://localhost:8000` — docs at `http://localhost:8000/docs`.
+ML API runs at `http://localhost:8000`: docs at `http://localhost:8000/docs`.
 
 ### 4. Frontend
 
@@ -146,30 +132,26 @@ EXPO_PUBLIC_API_URL=http://<your-local-ip>:3000/api
 EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=<your-google-maps-key>
 ```
 
-> Use your machine's local network IP (e.g. `192.168.x.x`), not `localhost` — the phone can't reach `localhost` on your computer.
+> Use your machine's local network IP (e.g. `192.168.x.x`), not `localhost`: the phone can't reach `localhost` on your computer.
 
 ```bash
 npx expo start
 ```
 
----
-
 ## Key Features
 
-- **Live accessibility map** — Color-coded pins (fully / partial / not accessible), filterable by category (Health, Government, Bank, Education, Commercial)
-- **Nearby places** — Google Places search with in-database matching; verified locations show full accessibility data
-- **Site & building detail** — Floor-by-floor breakdown of mobility, visual, and hearing accessibility, personalized to the user's disability profile
-- **Community reviews** — Submit reviews by building, floor, or specific service; visible to all users
-- **Badge system** — Automatically earned badges for review contributions (Explorer, Community, Impact)
-- **User profiles** — Set disability type to highlight relevant accessibility features throughout the app
-
----
+- **Live accessibility map**: Color-coded pins (fully / partial / not accessible), filterable by category (Health, Government, Bank, Education, Commercial)
+- **Nearby places**: Google Places search with in-database matching; verified locations show full accessibility data
+- **Site & building detail**: Floor-by-floor breakdown of mobility, visual, and hearing accessibility, personalized to the user's disability profile
+- **Community reviews**: Submit reviews by building, floor, or specific service; visible to all users
+- **Badge system**: Automatically earned badges for review contributions (Explorer, Community, Impact)
+- **User profiles**: Set disability type to highlight relevant accessibility features throughout the app
 
 ## Key Files Reference
 
 | Path | Description |
 |------|-------------|
-| `backend/prisma/schema.prisma` | Database schema — Sites, Buildings, Floors, Services, Reviews |
+| `backend/prisma/schema.prisma` | Database schema: Sites, Buildings, Floors, Services, Reviews |
 | `backend/src/` | NestJS modules: auth, buildings, sites, reviews, users |
 | `frontend/app/` | Screens: map tab, browse tab, review tab, profile tab, building detail, site detail |
 | `frontend/src/services/api/` | API client and service wrappers |
