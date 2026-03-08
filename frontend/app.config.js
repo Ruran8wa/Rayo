@@ -16,6 +16,7 @@ module.exports = {
       },
     },
     android: {
+      package: "com.ruran8wa.rayo",
       adaptiveIcon: {
         backgroundColor: "#E6F4FE",
         foregroundImage: "./assets/images/android-icon-foreground.png",
@@ -52,6 +53,11 @@ module.exports = {
     experiments: {
       typedRoutes: true,
       reactCompiler: true,
+    },
+    extra: {
+      eas: {
+        projectId: "65b6ca9d-e4cc-48f8-a1d4-bef18aefa607",
+      },
     },
   },
 };

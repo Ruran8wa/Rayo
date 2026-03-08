@@ -31,6 +31,8 @@ const FEATURE_ICONS: Record<string, React.ComponentProps<typeof Ionicons>["name"
   "Elevator": "arrow-up-outline",
   "Handrails": "hand-left-outline",
   "Ramp": "trending-up-outline",
+  "Clear signage": "text-outline",
+  "High-contrast signage": "contrast-outline",
 };
 
 function ReviewCard({ review }: { review: ReviewRecord }) {
@@ -309,25 +311,21 @@ function DisabilityBar({
             key={item.key}
             style={[
               dbStyles.item,
-              { backgroundColor: color + (isMe ? "18" : "0D"), borderColor: color + (isMe ? "BB" : "40") },
-              isMe && dbStyles.itemMe,
+              { backgroundColor: color + "0D", borderColor: color + "40" },
+              isMe && { backgroundColor: color + "25", borderColor: color, borderWidth: 2 },
             ]}
           >
-            <Ionicons name={item.icon} size={13} color={color} />
-            <Text variant="caption" semiBold={isMe} color={color} style={dbStyles.itemLabel}>
+            <View style={[dbStyles.iconCircle, { backgroundColor: color + (isMe ? "30" : "15") }]}>
+              <Ionicons name={item.icon} size={16} color={color} />
+            </View>
+            <Text variant="caption" semiBold={isMe} color={color} style={dbStyles.itemLabel} numberOfLines={1}>
               {item.label}
             </Text>
             <Ionicons
               name={item.ok ? "checkmark-circle" : "close-circle"}
-              size={13}
+              size={14}
               color={color}
-              style={dbStyles.statusIcon}
             />
-            {isMe && (
-              <View style={dbStyles.youTag}>
-                <Text style={dbStyles.youText}>You</Text>
-              </View>
-            )}
           </View>
         );
       })}
@@ -348,23 +346,20 @@ const dbStyles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
+    gap: Spacing.xs,
     borderWidth: 1,
-    borderRadius: BorderRadius.pill,
+    borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    minWidth: 80,
+    paddingVertical: Spacing.sm,
   },
-  itemMe: { borderWidth: 1.5 },
+  iconCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   itemLabel: { flex: 1 },
-  statusIcon: { marginLeft: "auto" },
-  youTag: {
-    borderRadius: BorderRadius.pill,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    backgroundColor: Colors.primary + "20",
-  },
-  youText: { fontSize: 9, color: Colors.primary, fontWeight: "700" },
 });
 
 const styles = StyleSheet.create({

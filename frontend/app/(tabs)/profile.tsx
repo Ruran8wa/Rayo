@@ -269,6 +269,7 @@ export default function ProfileTab() {
                       setSelectedNeed(opt.id);
                       setDropdownOpen(false);
                       userService.setPreferences(opt.id, {}).catch(() => {});
+                      if (user) updateUser({ ...user, disability_type: opt.id });
                     }}
                     accessibilityRole="radio"
                     accessibilityState={{ selected: isSelected }}
