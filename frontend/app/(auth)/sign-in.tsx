@@ -105,7 +105,7 @@ export default function SignIn() {
 
           <Button label="Sign in" onPress={handleSignIn} loading={loading} fullWidth style={styles.btn} />
 
-          <Pressable onPress={() => router.push("/(auth)/register")} style={styles.link}>
+          <Pressable onPress={() => router.push("/eula?context=signup")} style={styles.link}>
             <Text variant="label" color={Colors.textSecondary}>
               Don't have an account?{" "}
               <Text variant="label" color={Colors.primary} semiBold>Create account</Text>
