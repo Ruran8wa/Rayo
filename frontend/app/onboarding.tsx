@@ -70,7 +70,7 @@ export default function Onboarding() {
 
   const goToAuth = async () => {
     await storage.set("hasSeenOnboarding", true);
-    router.replace("/(auth)/register");
+    router.replace("/eula?context=signup");
   };
 
   return (
