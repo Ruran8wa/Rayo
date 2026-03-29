@@ -70,7 +70,7 @@ export default function ReviewTab() {
           <Button
             label="Create an account"
             variant="outline"
-            onPress={() => router.push("/(auth)/register")}
+            onPress={() => router.push("/eula?context=signup")}
             fullWidth
           />
         </View>
