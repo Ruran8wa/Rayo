@@ -50,6 +50,10 @@ export default function RootLayout() {
               name="review/new"
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name="eula"
+              options={{ headerShown: false }}
+            />
           </Stack>
           <StatusBar style="light" />
         </AuthProvider>
