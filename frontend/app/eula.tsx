@@ -10,10 +10,11 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Text as RNText,
+  TextStyle,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Text as RNText, TextStyle } from "react-native";
 
 // Local color tokens — EULA-specific palette
 const C = {
@@ -288,6 +289,7 @@ export default function EULAScreen() {
               style={styles.declineBtn}
               accessibilityRole="button"
               accessibilityLabel="Decline"
+              accessibilityHint="Opens a confirmation dialog before exiting"
             >
               <RNText style={[styles.declineBtnText, { color: C.declineText }]}>Decline</RNText>
             </Pressable>
