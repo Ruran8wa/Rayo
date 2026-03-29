@@ -13,7 +13,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Text as RNText } from "react-native";
+import { Text as RNText, TextStyle } from "react-native";
 
 // Local color tokens — EULA-specific palette
 const C = {
@@ -22,7 +22,6 @@ const C = {
   headerText: "#F6F2EB",
   sectionHeading: "#2D5A3D",
   bodyText: "#182B1F",
-  secondaryText: "#4A6854",
   mutedText: "#7A9882",
   divider: "#EDE8DF",
   acceptBg: "#2D5A3D",
@@ -35,7 +34,7 @@ const C = {
 };
 
 // Typography helpers — uses project fonts loaded in app/index.tsx
-function Heading({ children, style }: { children: string; style?: object }) {
+function Heading({ children, style }: { children: string; style?: TextStyle }) {
   return (
     <RNText style={[{ fontFamily: "DMSerifDisplay_400Regular", fontSize: 15, color: C.sectionHeading, marginBottom: 6, marginTop: 20 }, style]}>
       {children}
@@ -106,7 +105,7 @@ export default function EULAScreen() {
         <View style={styles.header}>
           {isProfile && (
             <Pressable
-              onPress={() => router.back()}
+              onPress={handleClose}
               style={styles.backBtn}
               accessibilityRole="button"
               accessibilityLabel="Go back"
