@@ -146,7 +146,7 @@ export default function ProfileTab() {
           <Button
             label="Create an account"
             variant="outline"
-            onPress={() => router.push("/(auth)/register")}
+            onPress={() => router.push("/eula?context=signup")}
             fullWidth
           />
         </View>
@@ -320,6 +320,17 @@ export default function ProfileTab() {
         <Section title="ACCOUNT">
           <Pressable
             style={styles.accountRow}
+            onPress={() => router.push("/eula?context=profile")}
+            accessibilityRole="button"
+            accessibilityLabel="Terms and Privacy Policy"
+          >
+            <Ionicons name="document-text-outline" size={20} color={Colors.textSecondary} />
+            <Text variant="body" color={Colors.textPrimary} style={styles.prefLabel}>Terms & Privacy Policy</Text>
+            <Ionicons name="chevron-forward" size={16} color={Colors.textSecondary} />
+          </Pressable>
+          <View style={styles.accountDivider} />
+          <Pressable
+            style={styles.accountRow}
             onPress={handleSignOut}
             accessibilityRole="button"
             accessibilityLabel="Sign out"
@@ -482,6 +493,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: Spacing.md,
     paddingVertical: Spacing.sm,
+  },
+  accountDivider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginHorizontal: -Spacing.base,
   },
   guestContainer: {
     flex: 1,
