@@ -102,24 +102,26 @@ export default function EULAScreen() {
   return (
     <View style={[styles.root, { backgroundColor: C.bg }]}>
       {/* ── Header ── */}
-      <View style={[styles.header, { paddingTop: insets.top, backgroundColor: C.headerBg }]}>
-        {isProfile && (
-          <Pressable
-            onPress={() => router.back()}
-            style={styles.backBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="chevron-back" size={22} color={C.headerText} />
-          </Pressable>
-        )}
-        {/* Logo mark */}
-        <View style={styles.logoMark}>
-          <RNText style={{ fontFamily: "DMSerifDisplay_400Regular", fontSize: 14, color: C.headerBg, fontWeight: "600" }}>R</RNText>
+      <View style={{ backgroundColor: C.headerBg, paddingTop: insets.top }}>
+        <View style={styles.header}>
+          {isProfile && (
+            <Pressable
+              onPress={() => router.back()}
+              style={styles.backBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+            >
+              <Ionicons name="chevron-back" size={22} color={C.headerText} />
+            </Pressable>
+          )}
+          {/* Logo mark */}
+          <View style={styles.logoMark}>
+            <RNText style={{ fontFamily: "DMSerifDisplay_400Regular", fontSize: 14, color: C.headerBg, fontWeight: "600" }}>R</RNText>
+          </View>
+          <RNText style={styles.headerTitle}>Terms of Use & Privacy Policy</RNText>
+          {/* Spacer to keep title centred when back button is shown */}
+          {isProfile && <View style={{ width: 22 + 16 }} />}
         </View>
-        <RNText style={styles.headerTitle}>Terms of Use & Privacy Policy</RNText>
-        {/* Spacer to keep title centred when back button is shown */}
-        {isProfile && <View style={{ width: 22 + 16 }} />}
       </View>
 
       {/* ── Scrollable content ── */}
